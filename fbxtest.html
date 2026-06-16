@@ -92,14 +92,14 @@ function buildLabels(obj){
   clearLabels();let i=0;
   obj.traverse(c=>{if(c.isMesh){const box=new THREE.Box3().setFromObject(c);const ctr=box.getCenter(new THREE.Vector3());
     const sz=box.getSize(new THREE.Vector3());const s=makeLabel(i);
-    s.position.copy(ctr);s.position.y+=sz.y*0.5+0.05;const sc=Math.min(sz.x,sz.z)*0.62;s.scale.set(sc,sc,sc);
+    s.position.set(ctr.x,box.max.y+0.02,ctr.z);const sc=Math.min(sz.x,sz.z)*0.62;s.scale.set(sc,sc,sc);
     s.visible=showLabels;scene.add(s);labels.push(s);i++;}});
 }
 function load(file){
   modelFile=file;log('読み込み中… '+file);clearLabels();
   if(current){scene.remove(current);current=null;}
   new THREE.FBXLoader().load('assets/'+file,obj=>{
-    current=obj;applyMat(obj);scene.add(obj);frame(obj);buildLabels(obj);
+    current=obj;applyMat(obj);scene.add(obj);frame(obj);buildLabels(obj);topView();
   },undefined,err=>{log('読み込み失敗: '+file+'\n'+(err&&err.message||err));});
 }
 function topView(){if(!current)return;const box=new THREE.Box3().setFromObject(current);
