@@ -66,6 +66,17 @@ function onResize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=inner
 function applyMat(obj){obj.traverse(c=>{if(c.isMesh){
   c.material=new THREE.MeshStandardMaterial({map:texOn?tex:null,color:texOn?0xffffff:0xcccccc,
     roughness:0.62,metalness:0.0,wireframe:wire});}});}
+function gridMap(obj){
+  const arr=[];let i=0;
+  obj.traverse(c=>{if(c.isMesh){const b=new THREE.Box3().setFromObject(c);const ctr=b.getCenter(new THREE.Vector3());arr.push({i,x:ctr.x,z:ctr.z});i++;}});
+  arr.sort((a,b)=>a.z-b.z);
+  const rows=[];let cur=[],lastz=null;
+  arr.forEach(o=>{if(lastz===null||Math.abs(o.z-lastz)<1.2)cur.push(o);else{rows.push(cur);cur=[o];}lastz=o.z;});
+  if(cur.length)rows.push(cur);
+  let s='位置順インデックス:\n';
+  rows.forEach(r=>{r.sort((a,b)=>a.x-b.x);s+=r.map(o=>String(o.i).padStart(2)).join('  ')+'\n';});
+  return s;
+}
 function frame(obj){
   const box=new THREE.Box3().setFromObject(obj);const size=box.getSize(new THREE.Vector3());
   const center=box.getCenter(new THREE.Vector3());
@@ -79,8 +90,7 @@ function frame(obj){
 meshes: ${meshes}  vertices: ${verts}
 size: ${size.x.toFixed(2)} x ${size.y.toFixed(2)} x ${size.z.toFixed(2)}
 materials: ${[...mats].join(', ')}
-flipY:${flipY} wire:${wire} tex:${texOn}
-（ドラッグで回転 / ピンチでズーム）`);
+${gridMap(obj)}（ドラッグで回転 / ピンチでズーム）`);
 }
 function clearLabels(){labelData.forEach(d=>d.el.remove());labelData=[];}
 function buildLabels(obj){
