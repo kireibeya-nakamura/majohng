@@ -49,15 +49,14 @@
   /* palette bar */
   #palbar{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:3;
     padding:8px max(12px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
-    background:linear-gradient(0deg,rgba(20,22,24,.7),rgba(20,22,24,.32) 70%,transparent);
-    backdrop-filter:blur(14px) saturate(118%);-webkit-backdrop-filter:blur(14px) saturate(118%);}
+    background:linear-gradient(0deg,rgba(20,22,24,.95),rgba(20,22,24,.6) 64%,transparent);}
   #ctrlrow{display:flex;justify-content:center;gap:8px;}
   #palrow{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;}
   .tabs{display:flex;flex-direction:column;gap:4px;}
   .tabs button{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);
     border-radius:8px;width:36px;padding:5px 0;font-size:.84rem;font-weight:700;}
   .tabs button.on{background:rgba(230,200,120,.16);color:var(--gold);border-color:rgba(230,200,120,.4);}
-  .pal{flex:1;display:flex;justify-content:center;gap:5px;overflow-x:auto;padding:2px 0;scrollbar-width:none;}
+  .pal{flex:0 1 auto;display:flex;justify-content:center;gap:5px;overflow-x:auto;padding:2px 0;scrollbar-width:none;}
   .pal::-webkit-scrollbar{display:none;}
   .pal button{flex:0 0 auto;appearance:none;border:none;background:none;padding:0;border-radius:6px;overflow:hidden;
     box-shadow:0 2px 7px rgba(0,0,0,.5);height:42px;}
@@ -523,6 +522,7 @@ function loadThree(cb){if(window.THREE)return cb(true);
   s.onload=()=>cb(true);s.onerror=()=>cb(false);document.head.appendChild(s);}
 
 /* ---- DoF (BokehPass) postprocessing ---- */
+const DOF_ON=false; // DoF（ボケ）一旦オフ。trueで復活
 let composer=null,bokehPass=null,usePost=false,curLook=null;
 function loadScriptSeq(urls,cb){let i=0;(function next(){if(i>=urls.length)return cb(true);
   const s=document.createElement('script');s.src=urls[i++];s.onload=next;s.onerror=()=>cb(false);document.head.appendChild(s);})();}
@@ -623,14 +623,15 @@ function buildHand(){
     t.mesh.rotation.x=0;t.mesh.position.set(0,T.H/2,0);
     t.stand={x:t.outer.position.x,z:sz};
     scene.add(t.outer);tiles.push(t);});
-  // 倒れた後：全牌を1列（中央より少し下）。あがり牌は右端に少し離して。
-  const order=[];for(let k=0;k<n;k++)if(k!==winPos)order.push(k);order.push(winPos);
-  const baseZ=2.25,extra=0.26;                       // baseZ:画面やや下、extra:あがり牌前の隙間
-  const rowW=n*T.W+(n-1)*T.GAP+extra;
-  let x=-rowW/2+T.W/2;
-  order.forEach(k=>{if(k===winPos)x+=extra;
-    tiles[k].flat={x:x+rndJ(0.012),z:baseZ+rndJ(0.02),yaw:rndJ(0.05)};
-    x+=T.W+T.GAP;});
+  // 倒れた後：あがり牌以外を右上がりの斜め一列、あがり牌は右下手前に分離（参考画像 IMG_0021）
+  const others=[];for(let k=0;k<n;k++)if(k!==winPos)others.push(k);
+  const m=others.length,step=T.W+T.GAP,theta=-0.13,baseZ=2.05;  // theta<0で右側が上（奥）
+  const cs=Math.cos(theta),sn=Math.sin(theta);
+  others.forEach((k,j)=>{const s=(j-(m-1)/2)*step;
+    tiles[k].flat={x:cs*s+rndJ(0.01),z:baseZ+sn*s+rndJ(0.01),yaw:theta+rndJ(0.025)};});
+  // あがり牌：列の右端より右下手前（zを大きく）に、少し傾けて置く
+  const ex=cs*((m-1)/2*step);
+  tiles[winPos].flat={x:ex+0.55,z:baseZ+sn*((m-1)/2*step)+0.95,yaw:0.42};
 }
 function applyCam(){
   const a=CAM.stand,b=CAM.reveal,e=camP,L=(p,q)=>p+(q-p)*e;
@@ -905,7 +906,7 @@ loadThree(ok=>{
   const st=document.getElementById('status');
   if(!ok||!window.THREE){THREE_OK=false;document.getElementById('threefail').style.display='flex';st.textContent='';return;}
   try{THREE_OK=true;initScene();st.textContent='牌を並べてください';render();
-    loadPost(ok2=>{if(!ok2)return;try{initComposer();usePost=true;}catch(e){console.warn('DoF init failed',e);usePost=false;}});}
+    if(DOF_ON)loadPost(ok2=>{if(!ok2)return;try{initComposer();usePost=true;}catch(e){console.warn('DoF init failed',e);usePost=false;}});}
   catch(e){console.warn(e);THREE_OK=false;document.getElementById('threefail').style.display='flex';st.textContent='';}
 });
 </script>
