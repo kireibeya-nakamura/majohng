@@ -26,6 +26,7 @@
     <button id="wire">wireframe</button>
     <button id="tex" class="on">texture ON</button>
     <button id="labels" class="on">番号</button>
+    <button id="verify">検証(牌名)</button>
     <button id="topview">真上から</button>
   </div>
   <div id="info">読み込み中…</div>
@@ -40,7 +41,13 @@
 const info=document.getElementById('info');
 function log(s){info.textContent=s;}
 let renderer,scene,camera,controls,current=null,labelData=[],showLabels=true;
-let flipY=true,wire=false,texOn=true,modelFile='MahjongPi_Blue.fbx';
+let flipY=true,wire=false,texOn=true,verify=false,modelFile='MahjongPi_Blue.fbx';
+// 私が割り出したFBXメッシュindex→牌名の対応（検証用）
+const TILE_NAMES=['一萬','二萬','三萬','四萬','五萬','六萬','七萬','八萬','九萬',
+  '一筒','二筒','三筒','四筒','五筒','六筒','七筒','八筒','九筒',
+  '一索','二索','三索','四索','五索','六索','七索','八索','九索','東','南','西','北','白','發','中'];
+const POS_ORDER=[33,13,26,5,29,24,20,8,1, 18,7,32,30,2,31,15,21,17, 23,22,19,6,11,10,12,27,0, 28,3,14,16,9,4,25];
+const MESH2NAME={};POS_ORDER.forEach((mesh,k)=>MESH2NAME[mesh]=TILE_NAMES[k]);
 const labelLayer=document.createElement('div');
 labelLayer.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:4;';
 document.body.appendChild(labelLayer);
@@ -97,12 +104,14 @@ function buildLabels(obj){
   clearLabels();let i=0;
   obj.traverse(c=>{if(c.isMesh){const box=new THREE.Box3().setFromObject(c);const ctr=box.getCenter(new THREE.Vector3());
     ctr.y=box.max.y; // 牌の上面（絵柄）に合わせる
-    const el=document.createElement('div');el.textContent=i;
-    el.style.cssText='position:absolute;transform:translate(-50%,-50%);background:rgba(0,0,0,.72);color:#ffde5a;'
-      +'border:2px solid #ffde5a;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;'
-      +'justify-content:center;font:bold 13px sans-serif;';
-    labelLayer.appendChild(el);labelData.push({el,pos:ctr});i++;}});
+    const el=document.createElement('div');const idx=i;
+    el.style.cssText='position:absolute;transform:translate(-50%,-50%);background:rgba(0,0,0,.78);color:#ffde5a;'
+      +'border:2px solid #ffde5a;border-radius:8px;min-width:24px;height:24px;padding:0 4px;display:flex;align-items:center;'
+      +'justify-content:center;font:bold 13px sans-serif;white-space:nowrap;';
+    labelLayer.appendChild(el);labelData.push({el,pos:ctr,idx});i++;}});
+  refreshLabelText();
 }
+function refreshLabelText(){labelData.forEach(d=>{d.el.textContent=verify?(MESH2NAME[d.idx]||'?'):d.idx;});}
 function updateLabels(){const w=innerWidth,h=innerHeight;
   labelData.forEach(d=>{const v=d.pos.clone().project(camera);
     if(!showLabels||v.z>1){d.el.style.display='none';return;}
@@ -115,14 +124,16 @@ function load(file){
   },undefined,err=>{log('読み込み失敗: '+file+'\n'+(err&&err.message||err));});
 }
 function topView(){if(!current)return;const box=new THREE.Box3().setFromObject(current);
-  const sz=box.getSize(new THREE.Vector3());const d=Math.max(sz.x,sz.z)*1.3;
-  camera.position.set(0,d,0.001);controls.target.set(0,0,0);controls.update();}
+  const sz=box.getSize(new THREE.Vector3());const d=Math.max(sz.x,sz.z)*1.25;
+  controls.target.set(0,0,0);camera.up.set(0,0,-1);camera.position.set(0,d,0.0001);
+  camera.lookAt(0,0,0);controls.update();}
 document.querySelectorAll('#ui button[data-m]').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#ui button[data-m]').forEach(x=>x.classList.remove('on'));b.classList.add('on');load(b.dataset.m);});
 document.getElementById('flip').onclick=function(){flipY=!flipY;tex.flipY=flipY;tex.needsUpdate=true;this.classList.toggle('on',flipY);if(current)frame(current);};
 document.getElementById('wire').onclick=function(){wire=!wire;this.classList.toggle('on',wire);if(current)applyMat(current);};
 document.getElementById('tex').onclick=function(){texOn=!texOn;this.classList.toggle('on',texOn);this.textContent=texOn?'texture ON':'texture OFF';if(current)applyMat(current);};
 document.getElementById('labels').onclick=function(){showLabels=!showLabels;this.classList.toggle('on',showLabels);};
+document.getElementById('verify').onclick=function(){verify=!verify;this.classList.toggle('on',verify);refreshLabelText();};
 document.getElementById('topview').onclick=topView;
 init();
 </script>
