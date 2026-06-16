@@ -87,6 +87,17 @@
 ## 2026-06-16 Claude（牌配置を元に戻す）
 - 斜め配置が不自然すぎたため、元のレイアウト（まっすぐな一列＋あがり牌を手前z+0.95に分離、牌ごとに微小なyawジッター）に戻す
 
+## 2026-06-16 Claude（FBX 3Dモデル検証開始）
+- 3D麻雀牌アセット（Maya FBX＋テクスチャ）を `assets/` に追加
+  - 元: Desktop\nintend02\新しいフォルダー\Mahjong
+  - MahjongPi_Blue / _Blue_Shanghi / _Yellow / Mahjong_Tenbow .fbx、Mahjong.png（テクスチャアトラス）
+- 変換ツール（Blender/Node等）が無いため、Three.js FBXLoader でランタイム読込する方針
+- 検証用 `fbxtest.html` を追加（本体アプリは未変更）
+  - three r128 + fflate + NURBS + FBXLoader + OrbitControls をCDN(jsdelivr 0.128.0)から読込
+  - モデル切替/テクスチャflipY/wireframe/texトグル、モデル情報（mesh数/頂点/サイズ/material）表示
+  - 目的: モデル構造とUV（34種をどう描き分けるか）を把握してから本体へ統合判断
+  - URL: https://kireibeya-nakamura.github.io/majohng/fbxtest.html
+
 ---
 
 ## 引き継ぎ時の注意

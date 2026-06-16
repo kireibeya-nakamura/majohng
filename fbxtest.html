@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>FBX テスト</title>
+<style>
+  html,body{margin:0;height:100%;background:#15171a;color:#e8e6df;font-family:-apple-system,sans-serif;overflow:hidden;}
+  #c{position:fixed;inset:0;}
+  #ui{position:fixed;left:8px;top:8px;right:8px;z-index:5;display:flex;flex-wrap:wrap;gap:6px;}
+  #ui button{appearance:none;border:1px solid #444;background:rgba(30,33,37,.85);color:#e8e6df;
+    border-radius:8px;padding:7px 10px;font-size:.74rem;font-weight:600;}
+  #ui button.on{background:#caa84a;color:#1a1a16;border-color:#caa84a;}
+  #info{position:fixed;left:8px;bottom:8px;right:8px;z-index:5;background:rgba(20,22,25,.88);
+    border:1px solid #333;border-radius:8px;padding:10px 12px;font-size:.72rem;line-height:1.6;white-space:pre-wrap;max-height:38vh;overflow:auto;}
+</style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui">
+    <button data-m="MahjongPi_Blue.fbx" class="on">Blue</button>
+    <button data-m="MahjongPi_Blue_Shanghi.fbx">Shanghi</button>
+    <button data-m="MahjongPi_Yellow.fbx">Yellow</button>
+    <button data-m="Mahjong_Tenbow.fbx">Tenbow</button>
+    <button id="flip">texture flipY</button>
+    <button id="wire">wireframe</button>
+    <button id="tex" class="on">texture ON</button>
+  </div>
+  <div id="info">読み込み中…</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/fflate.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/curves/NURBSUtils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/curves/NURBSCurve.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const info=document.getElementById('info');
+function log(s){info.textContent=s;}
+let renderer,scene,camera,controls,current=null;
+let flipY=false,wire=false,texOn=true,modelFile='MahjongPi_Blue.fbx';
+const tex=new THREE.TextureLoader().load('assets/Mahjong.png',t=>{t.needsUpdate=true;});
+tex.flipY=flipY;if(THREE.sRGBEncoding!==undefined)tex.encoding=THREE.sRGBEncoding;
+
+function init(){
+  renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+  renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x15171a);
+  camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.01,5000);
+  camera.position.set(0,40,140);
+  scene.add(new THREE.AmbientLight(0xffffff,0.9));
+  const d=new THREE.DirectionalLight(0xffffff,0.8);d.position.set(50,120,90);scene.add(d);
+  const d2=new THREE.DirectionalLight(0x9fd0ff,0.3);d2.position.set(-60,30,-50);scene.add(d2);
+  scene.add(new THREE.GridHelper(200,20,0x444444,0x2a2a2a));
+  controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enableDamping=true;
+  addEventListener('resize',onResize);onResize();
+  load(modelFile);
+  (function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera);})();
+}
+function onResize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
+function applyMat(obj){obj.traverse(c=>{if(c.isMesh){
+  c.material=new THREE.MeshStandardMaterial({map:texOn?tex:null,color:texOn?0xffffff:0xcccccc,
+    roughness:0.62,metalness:0.0,wireframe:wire});}});}
+function frame(obj){
+  const box=new THREE.Box3().setFromObject(obj);const size=box.getSize(new THREE.Vector3());
+  const center=box.getCenter(new THREE.Vector3());
+  obj.position.sub(center); // center at origin
+  const maxd=Math.max(size.x,size.y,size.z)||1;
+  const dist=maxd*2.2;camera.position.set(0,maxd*0.6,dist);controls.target.set(0,0,0);controls.update();
+  let meshes=0,verts=0,mats=new Set();
+  obj.traverse(c=>{if(c.isMesh){meshes++;const g=c.geometry;verts+=g.attributes.position?g.attributes.position.count:0;
+    (Array.isArray(c.material)?c.material:[c.material]).forEach(m=>mats.add(m&&m.name||'(no name)'));}});
+  log(`model: ${modelFile}
+meshes: ${meshes}  vertices: ${verts}
+size: ${size.x.toFixed(2)} x ${size.y.toFixed(2)} x ${size.z.toFixed(2)}
+materials: ${[...mats].join(', ')}
+flipY:${flipY} wire:${wire} tex:${texOn}
+（ドラッグで回転 / ピンチでズーム）`);
+}
+function load(file){
+  modelFile=file;log('読み込み中… '+file);
+  if(current){scene.remove(current);current=null;}
+  new THREE.FBXLoader().load('assets/'+file,obj=>{
+    current=obj;applyMat(obj);scene.add(obj);frame(obj);
+  },undefined,err=>{log('読み込み失敗: '+file+'\n'+(err&&err.message||err));});
+}
+document.querySelectorAll('#ui button[data-m]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#ui button[data-m]').forEach(x=>x.classList.remove('on'));b.classList.add('on');load(b.dataset.m);});
+document.getElementById('flip').onclick=function(){flipY=!flipY;tex.flipY=flipY;tex.needsUpdate=true;this.classList.toggle('on',flipY);if(current)frame(current);};
+document.getElementById('wire').onclick=function(){wire=!wire;this.classList.toggle('on',wire);if(current)applyMat(current);};
+document.getElementById('tex').onclick=function(){texOn=!texOn;this.classList.toggle('on',texOn);this.textContent=texOn?'texture ON':'texture OFF';if(current)applyMat(current);};
+init();
+</script>
+</body>
+</html>
