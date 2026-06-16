@@ -31,6 +31,16 @@
   - スタート押下で `body.started` クラス付与 → ガラスが晴れる（blur→0）→ 牌が見える → 1秒遅れでUI（上部バー/パレット/カウント）がフェード＆ライズイン
   - 開始前はUIを非表示（opacity:0/pointer-events:none）
 
+## 2026-06-16 Claude（カメラ＋DoF）
+- カメラを正面寄り・低めに変更（ほぼ真正面から牌を見る）
+  - `CAM.stand` pos:[0,1.25,12]、look:[0,0.42,1.2]
+- FOVを望遠側に（`FOV=26`）して牌を大きく表示。fitCam/sizeResultPlaneの固定値42も`FOV`に統一
+- 被写界深度（DoF）を追加：Three.js postprocessing の BokehPass
+  - `loadPost()` でCDN（jsdelivr three@0.128.0 examples/js）からスクリプト読込→`initComposer()`でEffectComposer構築
+  - `bokehPass` focus は毎フレーム注視点（curLook）までの距離に追従、aperture:0.018 maxblur:0.009
+  - 読込/初期化失敗時は通常描画にフォールバック（usePost=false）
+  - 注: BokehPassはモバイルGPU負荷あり。重い/効果が強すぎる場合は aperture/maxblur を調整
+
 ---
 
 ## 引き継ぎ時の注意

@@ -484,8 +484,9 @@ function gong(){if(!soundOn||!actx)return;[96,128,192,256].forEach((f,i)=>tone(f
 
 /* ============ 3D table ============ */
 const T={W:0.6,H:0.84,D:0.36,GAP:0.06,Z:1.4};
+const FOV=26; // 望遠寄り（焦点距離深め）で牌を大きく見せる
 const CAM={
-  stand:{pos:[0,3.9,10.8],look:[0,0.3,1.2],up:[0,1,0]},
+  stand:{pos:[0,1.25,12],look:[0,0.42,1.2],up:[0,1,0]},
   reveal:{pos:[0,9.6,1.9],look:[0,0,1.9],up:[0,0,-1]}
 };
 let THREE_OK=false,renderer,scene,camera,texCache={},winTexCache={},tiles=[],raycaster,pointer,camP=0,fallen=false;
@@ -496,6 +497,29 @@ function tickTweens(now){let any=tweens.length>0;for(const tw of tweens){if(now<
 function loadThree(cb){if(window.THREE)return cb(true);
   const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
   s.onload=()=>cb(true);s.onerror=()=>cb(false);document.head.appendChild(s);}
+
+/* ---- DoF (BokehPass) postprocessing ---- */
+let composer=null,bokehPass=null,usePost=false,curLook=null;
+function loadScriptSeq(urls,cb){let i=0;(function next(){if(i>=urls.length)return cb(true);
+  const s=document.createElement('script');s.src=urls[i++];s.onload=next;s.onerror=()=>cb(false);document.head.appendChild(s);})();}
+function loadPost(cb){const base='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
+  loadScriptSeq([
+    base+'shaders/CopyShader.js',
+    base+'postprocessing/ShaderPass.js',
+    base+'postprocessing/MaskPass.js',
+    base+'postprocessing/EffectComposer.js',
+    base+'postprocessing/RenderPass.js',
+    base+'shaders/BokehShader.js',
+    base+'postprocessing/BokehPass.js'
+  ],cb);}
+function initComposer(){
+  const host=document.getElementById('stage'),w=host.clientWidth,h=host.clientHeight;
+  composer=new THREE.EffectComposer(renderer);
+  composer.addPass(new THREE.RenderPass(scene,camera));
+  bokehPass=new THREE.BokehPass(scene,camera,{focus:11,aperture:0.018,maxblur:0.009,width:w,height:h});
+  composer.addPass(bokehPass);
+  composer.setSize(w,h);
+}
 
 function texFor(i){if(texCache[i])return texCache[i];const c=faceCanvas(i,200,284,false);
   const t=new THREE.CanvasTexture(c);t.anisotropy=4;if(THREE.sRGBEncoding!==undefined)t.encoding=THREE.sRGBEncoding;return texCache[i]=t;}
@@ -508,7 +532,7 @@ function initScene(){
   renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
   host.insertBefore(renderer.domElement,document.getElementById('vig'));
   scene=new THREE.Scene();
-  camera=new THREE.PerspectiveCamera(42,1,0.1,200);
+  camera=new THREE.PerspectiveCamera(FOV,1,0.1,200);
   scene.add(new THREE.AmbientLight(0xffffff,0.78));
   const dir=new THREE.DirectionalLight(0xfff2d8,0.5);dir.position.set(-3,8,6);scene.add(dir);
   const dir2=new THREE.DirectionalLight(0x9fd0ff,0.2);dir2.position.set(5,4,-4);scene.add(dir2);
@@ -577,14 +601,16 @@ function applyCam(){
   const a=CAM.stand,b=CAM.reveal,e=camP,L=(p,q)=>p+(q-p)*e;
   camera.position.set(L(a.pos[0],b.pos[0]),L(a.pos[1],b.pos[1]),L(a.pos[2],b.pos[2]));
   camera.up.set(L(a.up[0],b.up[0]),L(a.up[1],b.up[1]),L(a.up[2],b.up[2])).normalize();
-  camera.lookAt(L(a.look[0],b.look[0]),L(a.look[1],b.look[1]),L(a.look[2],b.look[2]));
+  const lx=L(a.look[0],b.look[0]),ly=L(a.look[1],b.look[1]),lz=L(a.look[2],b.look[2]);
+  camera.lookAt(lx,ly,lz);
+  if(!curLook)curLook=new THREE.Vector3();curLook.set(lx,ly,lz);
 }
-function fitCam(){const vfov=42*Math.PI/180,a=Math.max(0.35,camera.aspect),half=Math.tan(vfov/2);
+function fitCam(){const vfov=FOV*Math.PI/180,a=Math.max(0.35,camera.aspect),half=Math.tan(vfov/2);
   let ds=10.2/(2*half*a);ds=Math.max(7.6,ds);CAM.stand.pos[2]=T.Z+ds;
   let dr=10.8/(2*half*a);dr=Math.max(7,dr);CAM.reveal.pos[1]=dr;
   sizeResultPlane();}
 function sizeResultPlane(){if(!resultPlane)return;
-  const vfov=42*Math.PI/180,a=Math.max(0.35,camera.aspect),dr=CAM.reveal.pos[1];
+  const vfov=FOV*Math.PI/180,a=Math.max(0.35,camera.aspect),dr=CAM.reveal.pos[1];
   const visH=2*dr*Math.tan(vfov/2),visW=visH*a;
   resultPlane.geometry.dispose();
   resultPlane.geometry=new THREE.PlaneGeometry(visW*0.98,visH*0.98);
@@ -593,9 +619,13 @@ function sizeResultPlane(){if(!resultPlane)return;
   if(resultCanvas.width!==cw||resultCanvas.height!==ch){resultCanvas.width=cw;resultCanvas.height=ch;}}
 function resize(){if(!renderer)return;const host=document.getElementById('stage');
   const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();
+  if(composer)composer.setSize(w,h);
   fitCam();applyCam();
   document.getElementById('rotate').classList.toggle('show', h>w*1.05);}
-function loop(now){tickTweens(now||performance.now());if(renderer)renderer.render(scene,camera);requestAnimationFrame(loop);}
+function loop(now){tickTweens(now||performance.now());
+  if(usePost&&composer){if(bokehPass&&curLook)bokehPass.uniforms['focus'].value=camera.position.distanceTo(curLook);composer.render();}
+  else if(renderer)renderer.render(scene,camera);
+  requestAnimationFrame(loop);}
 
 /* ---- 結果を卓の上に描画（牌の下のレイヤー） ---- */
 let resultCanvas,resultTex,resultPlane;
@@ -784,7 +814,8 @@ buildPalette(0);
 loadThree(ok=>{
   const st=document.getElementById('status');
   if(!ok||!window.THREE){THREE_OK=false;document.getElementById('threefail').style.display='flex';st.textContent='';return;}
-  try{THREE_OK=true;initScene();st.textContent='牌を並べてください';render();}
+  try{THREE_OK=true;initScene();st.textContent='牌を並べてください';render();
+    loadPost(ok2=>{if(!ok2)return;try{initComposer();usePost=true;}catch(e){console.warn('DoF init failed',e);usePost=false;}});}
   catch(e){console.warn(e);THREE_OK=false;document.getElementById('threefail').style.display='flex';st.textContent='';}
 });
 </script>
