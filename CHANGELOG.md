@@ -107,6 +107,11 @@
   - 起動時に非同期ロード→完了で render() 再構築
 - 既知の不確定: 牌の向き/スケール/質感は実機確認後に調整予定（rotateX符号・scale・roughness等）
 
+## 2026-06-16 Claude（質感＋ライティング）
+- 牌の艶アップ：FBX牌マテリアルを MeshStandardMaterial → MeshPhysicalMaterial（roughness0.28, clearcoat0.8, clearcoatRoughness0.16）
+- 背景の積み牌（walls）の緑面を象牙色に変更（wallMats の index2/5 を緑→ivory）
+- ライティングを「真上スポットライト＋暗め」に：AmbientLight 0.78→0.22(寒色)、Directional×2を撤去し SpotLight(真上 y20, angle≈π/5.2, penumbra0.55) + 弱いフィルライトに。怪しい雰囲気
+
 ---
 
 ## 引き継ぎ時の注意

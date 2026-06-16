@@ -585,9 +585,11 @@ function initScene(){
   host.insertBefore(renderer.domElement,document.getElementById('vig'));
   scene=new THREE.Scene();
   camera=new THREE.PerspectiveCamera(FOV,1,0.1,200);
-  scene.add(new THREE.AmbientLight(0xffffff,0.78));
-  const dir=new THREE.DirectionalLight(0xfff2d8,0.5);dir.position.set(-3,8,6);scene.add(dir);
-  const dir2=new THREE.DirectionalLight(0x9fd0ff,0.2);dir2.position.set(5,4,-4);scene.add(dir2);
+  // 怪しい雰囲気：真上からのスポットライト＋弱い環境光
+  scene.add(new THREE.AmbientLight(0x5a6472,0.22));
+  const spot=new THREE.SpotLight(0xfff1d4,2.6,70,Math.PI/5.2,0.55,1.1);
+  spot.position.set(0,20,1.6);spot.target.position.set(0,0,1.6);scene.add(spot);scene.add(spot.target);
+  const fill=new THREE.DirectionalLight(0x8aa0c0,0.14);fill.position.set(-4,6,-6);scene.add(fill);
   // felt
   const felt=new THREE.Mesh(new THREE.PlaneGeometry(60,60),
     new THREE.MeshStandardMaterial({color:0x2a2c2e,roughness:0.98}));
@@ -612,10 +614,10 @@ function initScene(){
 function wallMats(){return [
   new THREE.MeshStandardMaterial({color:0xe6ddc8,roughness:0.85}),
   new THREE.MeshStandardMaterial({color:0xe6ddc8,roughness:0.85}),
-  new THREE.MeshStandardMaterial({color:0x4fae67,roughness:0.55}),
+  new THREE.MeshStandardMaterial({color:0xe6ddc8,roughness:0.7}),
   new THREE.MeshStandardMaterial({color:0xddd3bd,roughness:0.85}),
   new THREE.MeshStandardMaterial({color:0xe9e0cb,roughness:0.8}),
-  new THREE.MeshStandardMaterial({color:0x3f9d5a,roughness:0.6})];}
+  new THREE.MeshStandardMaterial({color:0xddd3bd,roughness:0.72})];}
 function buildWalls(){
   const geo=new THREE.BoxGeometry(T.W,T.D,T.H); // lying tile (green top)
   const mats=wallMats();
@@ -629,7 +631,8 @@ function buildWalls(){
 function makeTile(i,win){
   const outer=new THREE.Group();let mesh;
   if(fbxReady&&tileGeoms[i]){
-    const mat=new THREE.MeshStandardMaterial({map:atlasTex,roughness:0.5,metalness:0.0});
+    const mat=new THREE.MeshPhysicalMaterial({map:atlasTex,roughness:0.28,metalness:0.0,
+      clearcoat:0.8,clearcoatRoughness:0.16});
     if(win){mat.emissive=new THREE.Color(0x4a3a12);mat.emissiveIntensity=0.55;}
     mesh=new THREE.Mesh(tileGeoms[i],mat);
   }else{
