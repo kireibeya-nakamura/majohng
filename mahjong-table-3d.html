@@ -623,15 +623,11 @@ function buildHand(){
     t.mesh.rotation.x=0;t.mesh.position.set(0,T.H/2,0);
     t.stand={x:t.outer.position.x,z:sz};
     scene.add(t.outer);tiles.push(t);});
-  // 倒れた後：あがり牌以外を右上がりの斜め一列、あがり牌は右下手前に分離（参考画像 IMG_0021）
+  // 倒れた後：あがり牌以外は1列、あがり牌は手前に斜め置き、少しランダムにズラす
   const others=[];for(let k=0;k<n;k++)if(k!==winPos)others.push(k);
-  const m=others.length,step=T.W+T.GAP,theta=-0.13,baseZ=2.05;  // theta<0で右側が上（奥）
-  const cs=Math.cos(theta),sn=Math.sin(theta);
-  others.forEach((k,j)=>{const s=(j-(m-1)/2)*step;
-    tiles[k].flat={x:cs*s+rndJ(0.01),z:baseZ+sn*s+rndJ(0.01),yaw:theta+rndJ(0.025)};});
-  // あがり牌：列の右端より右下手前（zを大きく）に、少し傾けて置く
-  const ex=cs*((m-1)/2*step);
-  tiles[winPos].flat={x:ex+0.55,z:baseZ+sn*((m-1)/2*step)+0.95,yaw:0.42};
+  const m=others.length,rowW=m*T.W+(m-1)*T.GAP,rx0=-rowW/2+T.W/2;
+  others.forEach((k,j)=>{tiles[k].flat={x:rx0+j*(T.W+T.GAP)+rndJ(0.05),z:T.Z+rndJ(0.06),yaw:rndJ(0.12)};});
+  tiles[winPos].flat={x:0.55,z:T.Z+T.H*0.95+0.5,yaw:0.5};
 }
 function applyCam(){
   const a=CAM.stand,b=CAM.reveal,e=camP,L=(p,q)=>p+(q-p)*e;
