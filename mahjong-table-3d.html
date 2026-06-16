@@ -91,6 +91,29 @@
   .step b{min-width:1.4em;text-align:center;color:var(--gold);}
   #setclose{margin-top:2px;width:100%;border:none;background:linear-gradient(180deg,#f0d98c,#d8b24c);color:#04210f;font-weight:700;border-radius:10px;padding:11px;}
 
+  /* start screen (frosted glass) */
+  #startscreen{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;gap:26px;
+    background:rgba(30,32,34,.34);
+    backdrop-filter:blur(20px) saturate(120%);-webkit-backdrop-filter:blur(20px) saturate(120%);
+    transition:opacity 1.2s ease,backdrop-filter 1.2s ease,-webkit-backdrop-filter 1.2s ease;}
+  #startscreen .st-title{font-weight:600;letter-spacing:.3em;font-size:1.5rem;color:var(--ink);
+    text-shadow:0 2px 18px rgba(0,0,0,.5);}
+  #startscreen .st-title small{display:block;font-size:.62rem;letter-spacing:.42em;color:var(--gold);margin-top:8px;}
+  #startbtn{appearance:none;border:none;color:#04210f;font-weight:800;letter-spacing:.16em;
+    border-radius:999px;padding:15px 44px;font-size:1rem;cursor:pointer;
+    background:linear-gradient(180deg,#f0d98c,#d8b24c);box-shadow:0 8px 28px rgba(216,178,76,.4);
+    animation:cg 2.4s ease-in-out infinite;}
+  #startbtn:active{transform:scale(.96);}
+  body.started #startscreen{opacity:0;backdrop-filter:blur(0);-webkit-backdrop-filter:blur(0);pointer-events:none;}
+  /* UI hidden until start, then rises in */
+  #topbar,#palbar,#cntpill{opacity:0;pointer-events:none;}
+  body.started #topbar{opacity:1;pointer-events:auto;transition:opacity .9s ease 1s;}
+  body.started #cntpill{opacity:1;transition:opacity .9s ease 1s;}
+  #palbar{transform:translateY(26px);}
+  body.started #palbar{opacity:1;pointer-events:auto;transform:translateY(0);
+    transition:opacity .9s ease 1s,transform .9s ease 1s;}
+
   /* rotate hint */
   #rotate{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
     text-align:center;background:rgba(6,9,10,.94);color:var(--ink);font-size:1.02rem;line-height:2;z-index:9;padding:24px;}
@@ -165,6 +188,11 @@
         <div class="pal" id="pal"></div>
         <button class="calc" id="calc" disabled>計算開始</button>
       </div>
+    </div>
+
+    <div id="startscreen">
+      <div class="st-title">麻雀 点数計算<small>TABLE SCORING</small></div>
+      <button id="startbtn">使用スタート</button>
     </div>
 
     <div id="threefail">3D表示を読み込めませんでした。<br>通信環境をご確認のうえ、ページを再読み込みしてください。</div>
@@ -457,7 +485,7 @@ function gong(){if(!soundOn||!actx)return;[96,128,192,256].forEach((f,i)=>tone(f
 /* ============ 3D table ============ */
 const T={W:0.6,H:0.84,D:0.36,GAP:0.06,Z:1.4};
 const CAM={
-  stand:{pos:[0,3.2,10.8],look:[0,0.9,1.2],up:[0,1,0]},
+  stand:{pos:[0,3.9,10.8],look:[0,0.3,1.2],up:[0,1,0]},
   reveal:{pos:[0,9.6,1.9],look:[0,0,1.9],up:[0,0,-1]}
 };
 let THREE_OK=false,renderer,scene,camera,texCache={},winTexCache={},tiles=[],raycaster,pointer,camP=0,fallen=false;
@@ -749,6 +777,8 @@ document.getElementById('setclose').onclick=()=>document.getElementById('setwrap
 document.getElementById('setwrap').onclick=(e)=>{if(e.target.id==='setwrap')e.currentTarget.classList.remove('show');};
 document.getElementById('snd').onclick=()=>{soundOn=!soundOn;const b=document.getElementById('snd');
   b.classList.toggle('on',soundOn);b.textContent=soundOn?'効果音':'消音';if(soundOn)ensureCtx();};
+
+document.getElementById('startbtn').onclick=()=>{ensureCtx();document.body.classList.add('started');};
 
 buildPalette(0);
 loadThree(ok=>{
