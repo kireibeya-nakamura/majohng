@@ -57,6 +57,14 @@
 - 牌を画面上寄りに（`CAM.stand` look y:0.42→0.12）
 - 操作ボタン（戻す/クリア/効果音/設定 = `#ctrlrow`）を牌選択パレット（`#palrow`）の下に移動。牌との重なりを解消
 
+## 2026-06-16 Claude（スクロール先に設定ボタン追加）
+- 結果パネル（スクロール先 `#resultpanel`）に設定 `#rp-settings` を追加
+  - 親/子（`who2`）、ロン/ツモ（`win2`）… 既存のgear内 who/win と双方向同期（`syncSeg`/`setDealer`/`setTsumo`）
+  - 特殊役トグル `.tog`：海底摸月（haitei）、河底撈魚（houtei）、一発（ippatsu）
+  - 海底/河底は排他。海底ON→ツモ自動、河底ON→ロン自動
+- 状態に `haitei/houtei/ippatsu` を追加、`buildCtx` で反映（従来は固定false）
+  - 一発は門前＋立直時のみ、海底はツモ時のみ、河底はロン時のみスコアに反映（採点エンジンの条件）
+
 ---
 
 ## 引き継ぎ時の注意

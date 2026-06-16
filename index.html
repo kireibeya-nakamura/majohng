@@ -133,6 +133,12 @@
     display:flex;align-items:center;justify-content:center;padding:48px 24px;}
   .rp-inner{width:100%;max-width:1000px;text-align:center;}
   #rp-hint{color:var(--muted);font-size:.95rem;letter-spacing:.06em;}
+  #rp-settings{display:flex;flex-direction:column;gap:12px;align-items:center;margin-bottom:26px;
+    background:rgba(8,18,12,.45);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .rps-row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:center;}
+  .tog{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);
+    border-radius:9px;padding:8px 14px;font-size:.82rem;font-weight:600;}
+  .tog.on{background:rgba(230,200,120,.16);color:var(--gold);border-color:rgba(230,200,120,.4);}
   #rp-rank{color:var(--gold);letter-spacing:.42em;font-size:1.05rem;font-weight:700;opacity:0;transform:scale(.4);}
   #rp-rank.show{animation:stampIn .5s cubic-bezier(.2,1.5,.4,1) forwards;}
   @keyframes stampIn{0%{transform:scale(1.8) rotate(-6deg);opacity:0;}60%{transform:scale(.95) rotate(-2deg);opacity:1;}100%{transform:scale(1) rotate(-2deg);opacity:1;}}
@@ -215,6 +221,20 @@
 
   <section id="resultpanel">
     <div class="rp-inner">
+      <div id="rp-settings">
+        <div class="rps-row">
+          <span class="lab">親・子</span>
+          <span class="seg" id="who2"><button data-v="ko" class="on">子</button><button data-v="oya">親</button></span>
+          <span class="lab">あがり</span>
+          <span class="seg" id="win2"><button data-v="ron" class="on">ロン</button><button data-v="tsumo">ツモ</button></span>
+        </div>
+        <div class="rps-row">
+          <span class="lab">特殊</span>
+          <button class="tog" id="haitei">海底摸月</button>
+          <button class="tog" id="houtei">河底撈魚</button>
+          <button class="tog" id="ippatsu">一発</button>
+        </div>
+      </div>
       <div id="rp-hint">「計算開始」を押すと、上の卓に結果が表示されます</div>
       <div id="rp-bd"></div>
       <div class="rp-btns" id="rp-btns">
@@ -459,12 +479,12 @@ const palCache={};
 function palImg(i){if(palCache[i])return palCache[i];const c=faceCanvas(i,108,150,false);return palCache[i]=c.toDataURL();}
 
 /* ============ state ============ */
-const S={dealer:false,tsumo:false,riichi:false,dbl:false,roundWind:27,seatWind:28,dora:0};
+const S={dealer:false,tsumo:false,riichi:false,dbl:false,roundWind:27,seatWind:28,dora:0,haitei:false,houtei:false,ippatsu:false};
 let hand=[],winPos=0,lastResult=null,lastValid=false,soundOn=true,actx=null;
 const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
 let sortedHand=[],winTile=null;
 function buildCtx(){return {winTile,tsumo:S.tsumo,dealer:S.dealer,roundWind:S.roundWind,seatWind:S.seatWind,dora:S.dora,
-  riichi:S.riichi,doubleRiichi:S.dbl,ippatsu:false,haitei:false,houtei:false,rinshan:false,chankan:false,tenhou:false,chiihou:false};}
+  riichi:S.riichi,doubleRiichi:S.dbl,ippatsu:S.ippatsu,haitei:S.haitei,houtei:S.houtei,rinshan:false,chankan:false,tenhou:false,chiihou:false};}
 
 /* ============ sound ============ */
 function ensureCtx(){if(!actx){try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(actx&&actx.state==='suspended')actx.resume();}
@@ -831,8 +851,25 @@ document.getElementById('rp-edit').onclick=()=>{buildHand();hideResult();scrollT
 document.getElementById('scrollcue').onclick=scrollToResult;
 document.getElementById('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{
   document.getElementById('tabs').querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');buildPalette(+b.dataset.s);});
-bindSeg('who',v=>S.dealer=(v==='oya'));
-bindSeg('win',v=>S.tsumo=(v==='tsumo'));
+// 親/子・ロン/ツモは設定パネルとスクロール先の両方を同期
+function syncSeg(id,val){const box=document.getElementById(id);if(!box)return;
+  box.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===val));}
+function setDealer(v){S.dealer=v;syncSeg('who',v?'oya':'ko');syncSeg('who2',v?'oya':'ko');render();}
+function setTsumo(v){S.tsumo=v;syncSeg('win',v?'tsumo':'ron');syncSeg('win2',v?'tsumo':'ron');
+  if(v&&S.houtei){S.houtei=false;document.getElementById('houtei').classList.remove('on');}
+  if(!v&&S.haitei){S.haitei=false;document.getElementById('haitei').classList.remove('on');}
+  render();}
+['who','who2'].forEach(id=>document.getElementById(id).querySelectorAll('button')
+  .forEach(b=>b.onclick=()=>setDealer(b.dataset.v==='oya')));
+['win','win2'].forEach(id=>document.getElementById(id).querySelectorAll('button')
+  .forEach(b=>b.onclick=()=>setTsumo(b.dataset.v==='tsumo')));
+// 特殊役トグル（海底/河底は排他、それぞれツモ/ロンを自動設定）
+const _hb=document.getElementById('haitei'),_ho=document.getElementById('houtei'),_ip=document.getElementById('ippatsu');
+_hb.onclick=()=>{S.haitei=!S.haitei;_hb.classList.toggle('on',S.haitei);
+  if(S.haitei){S.houtei=false;_ho.classList.remove('on');setTsumo(true);}else render();};
+_ho.onclick=()=>{S.houtei=!S.houtei;_ho.classList.toggle('on',S.houtei);
+  if(S.houtei){S.haitei=false;_hb.classList.remove('on');setTsumo(false);}else render();};
+_ip.onclick=()=>{S.ippatsu=!S.ippatsu;_ip.classList.toggle('on',S.ippatsu);render();};
 bindSeg('riichi',v=>{S.riichi=(v==='on'||v==='double');S.dbl=(v==='double');});
 bindSeg('round',v=>S.roundWind=+v);
 bindSeg('seat',v=>S.seatWind=+v);
