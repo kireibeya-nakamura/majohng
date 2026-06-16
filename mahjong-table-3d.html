@@ -174,12 +174,6 @@
     <div id="scrollcue">▼ メニュー</div>
 
     <div id="palbar">
-      <div id="ctrlrow">
-        <button class="ic" id="undo">戻す</button>
-        <button class="ic" id="clear">クリア</button>
-        <button class="ic on" id="snd">効果音</button>
-        <button class="ic" id="gear">設定</button>
-      </div>
       <div id="palrow">
         <div class="tabs" id="tabs">
           <button data-s="0" class="on">萬</button><button data-s="1">筒</button>
@@ -187,6 +181,12 @@
         </div>
         <div class="pal" id="pal"></div>
         <button class="calc" id="calc" disabled>計算開始</button>
+      </div>
+      <div id="ctrlrow">
+        <button class="ic" id="undo">戻す</button>
+        <button class="ic" id="clear">クリア</button>
+        <button class="ic on" id="snd">効果音</button>
+        <button class="ic" id="gear">設定</button>
       </div>
     </div>
 
@@ -486,7 +486,7 @@ function gong(){if(!soundOn||!actx)return;[96,128,192,256].forEach((f,i)=>tone(f
 const T={W:0.6,H:0.84,D:0.36,GAP:0.06,Z:1.4};
 const FOV=26; // 望遠寄り（焦点距離深め）で牌を大きく見せる
 const CAM={
-  stand:{pos:[0,1.25,12],look:[0,0.42,1.2],up:[0,1,0]},
+  stand:{pos:[0,1.25,12],look:[0,0.12,1.2],up:[0,1,0]},
   reveal:{pos:[0,9.6,1.9],look:[0,0,1.9],up:[0,0,-1]}
 };
 let THREE_OK=false,renderer,scene,camera,texCache={},winTexCache={},tiles=[],raycaster,pointer,camP=0,fallen=false;
