@@ -98,6 +98,15 @@
   - 目的: モデル構造とUV（34種をどう描き分けるか）を把握してから本体へ統合判断
   - URL: https://kireibeya-nakamura.github.io/majohng/fbxtest.html
 
+## 2026-06-16 Claude（本体に3D FBX牌を統合）
+- fbxtest.html の「位置順インデックス」＋検証モードで mesh→牌 の対応を確定
+  - 対応: FBX_POS_ORDER=[33,13,26,5,29,24,20,8,1, 18,7,32,30,2,31,15,21,17, 23,22,19,6,11,10,12,27,0, 28,3,14,16,9,4,25]（traversal順index→アプリ牌0..33）
+- 本体 mahjong-table-3d.html に MahjongPi_Yellow.fbx を統合
+  - loadFBXTiles(): fflate/NURBS/FBXLoader をCDN読込→34メッシュを正規化（中心化→rotateX(90)で面+y→+z立て→T寸法にスケール→法線再計算）し tileGeoms[appIdx] に格納。テクスチャ assets/Mahjong.png（flipY=true）
+  - makeTile(): fbxReady時は tileGeoms[i]＋atlasマテリアル、あがり牌は emissive gold。未ロード/失敗時は従来のBox+Canvas描画にフォールバック（USE_FBX=falseで無効化可）
+  - 起動時に非同期ロード→完了で render() 再構築
+- 既知の不確定: 牌の向き/スケール/質感は実機確認後に調整予定（rotateX符号・scale・roughness等）
+
 ---
 
 ## 引き継ぎ時の注意
