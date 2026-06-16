@@ -39,8 +39,11 @@
 <script>
 const info=document.getElementById('info');
 function log(s){info.textContent=s;}
-let renderer,scene,camera,controls,current=null,labels=[],showLabels=true;
+let renderer,scene,camera,controls,current=null,labelData=[],showLabels=true;
 let flipY=true,wire=false,texOn=true,modelFile='MahjongPi_Blue.fbx';
+const labelLayer=document.createElement('div');
+labelLayer.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:4;';
+document.body.appendChild(labelLayer);
 const tex=new THREE.TextureLoader().load('assets/Mahjong.png',t=>{t.needsUpdate=true;});
 tex.flipY=flipY;if(THREE.sRGBEncoding!==undefined)tex.encoding=THREE.sRGBEncoding;
 
@@ -57,7 +60,7 @@ function init(){
   controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enableDamping=true;
   addEventListener('resize',onResize);onResize();
   load(modelFile);
-  (function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera);})();
+  (function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera);updateLabels();})();
 }
 function onResize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
 function applyMat(obj){obj.traverse(c=>{if(c.isMesh){
@@ -79,22 +82,20 @@ materials: ${[...mats].join(', ')}
 flipY:${flipY} wire:${wire} tex:${texOn}
 （ドラッグで回転 / ピンチでズーム）`);
 }
-function makeLabel(num){
-  const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
-  g.fillStyle='rgba(0,0,0,.7)';g.beginPath();g.arc(64,64,58,0,7);g.fill();
-  g.strokeStyle='#ffde5a';g.lineWidth=5;g.stroke();
-  g.fillStyle='#ffde5a';g.font='bold 70px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(num,64,70);
-  const t=new THREE.CanvasTexture(c);const m=new THREE.SpriteMaterial({map:t,depthTest:false,depthWrite:false,transparent:true});
-  const s=new THREE.Sprite(m);return s;
-}
-function clearLabels(){labels.forEach(l=>scene.remove(l));labels=[];}
+function clearLabels(){labelData.forEach(d=>d.el.remove());labelData=[];}
 function buildLabels(obj){
   clearLabels();let i=0;
   obj.traverse(c=>{if(c.isMesh){const box=new THREE.Box3().setFromObject(c);const ctr=box.getCenter(new THREE.Vector3());
-    const sz=box.getSize(new THREE.Vector3());const s=makeLabel(i);
-    s.position.set(ctr.x,box.max.y+0.02,ctr.z);const sc=Math.min(sz.x,sz.z)*0.62;s.scale.set(sc,sc,sc);
-    s.visible=showLabels;scene.add(s);labels.push(s);i++;}});
+    const el=document.createElement('div');el.textContent=i;
+    el.style.cssText='position:absolute;transform:translate(-50%,-50%);background:rgba(0,0,0,.72);color:#ffde5a;'
+      +'border:2px solid #ffde5a;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;'
+      +'justify-content:center;font:bold 13px sans-serif;';
+    labelLayer.appendChild(el);labelData.push({el,pos:ctr});i++;}});
 }
+function updateLabels(){const w=innerWidth,h=innerHeight;
+  labelData.forEach(d=>{const v=d.pos.clone().project(camera);
+    if(!showLabels||v.z>1){d.el.style.display='none';return;}
+    d.el.style.display='flex';d.el.style.left=((v.x*0.5+0.5)*w)+'px';d.el.style.top=((-v.y*0.5+0.5)*h)+'px';});}
 function load(file){
   modelFile=file;log('読み込み中… '+file);clearLabels();
   if(current){scene.remove(current);current=null;}
@@ -110,7 +111,7 @@ document.querySelectorAll('#ui button[data-m]').forEach(b=>b.onclick=()=>{
 document.getElementById('flip').onclick=function(){flipY=!flipY;tex.flipY=flipY;tex.needsUpdate=true;this.classList.toggle('on',flipY);if(current)frame(current);};
 document.getElementById('wire').onclick=function(){wire=!wire;this.classList.toggle('on',wire);if(current)applyMat(current);};
 document.getElementById('tex').onclick=function(){texOn=!texOn;this.classList.toggle('on',texOn);this.textContent=texOn?'texture ON':'texture OFF';if(current)applyMat(current);};
-document.getElementById('labels').onclick=function(){showLabels=!showLabels;this.classList.toggle('on',showLabels);labels.forEach(l=>l.visible=showLabels);};
+document.getElementById('labels').onclick=function(){showLabels=!showLabels;this.classList.toggle('on',showLabels);};
 document.getElementById('topview').onclick=topView;
 init();
 </script>
