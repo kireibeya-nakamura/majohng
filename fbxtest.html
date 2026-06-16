@@ -92,7 +92,7 @@ function buildLabels(obj){
   clearLabels();let i=0;
   obj.traverse(c=>{if(c.isMesh){const box=new THREE.Box3().setFromObject(c);const ctr=box.getCenter(new THREE.Vector3());
     const sz=box.getSize(new THREE.Vector3());const s=makeLabel(i);
-    s.position.copy(ctr);s.position.y+=sz.y*0.5+1.2;const sc=Math.max(sz.x,sz.z)*0.5;s.scale.set(sc,sc,sc);
+    s.position.copy(ctr);s.position.y+=sz.y*0.5+0.05;const sc=Math.min(sz.x,sz.z)*0.62;s.scale.set(sc,sc,sc);
     s.visible=showLabels;scene.add(s);labels.push(s);i++;}});
 }
 function load(file){
