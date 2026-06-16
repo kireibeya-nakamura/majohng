@@ -27,12 +27,11 @@
     text-align:center;padding:24px;color:var(--muted);font-size:.95rem;line-height:1.8;}
 
   /* top bar */
-  #topbar{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:8px;z-index:3;
-    padding:max(10px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 10px max(14px,env(safe-area-inset-left));
-    background:linear-gradient(180deg,rgba(6,9,10,.66),transparent);}
+  #topbar{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;justify-content:center;gap:8px;z-index:3;
+    padding:max(10px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 10px max(14px,env(safe-area-inset-left));}
   #title{font-weight:600;letter-spacing:.16em;font-size:.82rem;color:var(--ink);pointer-events:none;}
   #title small{display:block;font-size:.54rem;letter-spacing:.3em;color:var(--gold);margin-top:1px;}
-  #status{font-size:.7rem;color:var(--muted);margin-left:6px;pointer-events:none;}
+  #status{font-size:.72rem;color:var(--muted);pointer-events:none;letter-spacing:.08em;}
   #topbar .sp{flex:1;}
   .ic{appearance:none;border:1px solid var(--line);background:rgba(14,18,20,.55);color:var(--ink);
     border-radius:10px;padding:7px 11px;font-size:.74rem;font-weight:600;backdrop-filter:blur(8px);}
@@ -48,9 +47,11 @@
   #cntpill span{color:var(--muted);margin-left:8px;}
 
   /* palette bar */
-  #palbar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;z-index:3;
+  #palbar{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:3;
     padding:8px max(12px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
-    background:linear-gradient(0deg,rgba(7,10,11,.95),rgba(7,10,11,.6) 64%,transparent);}
+    background:linear-gradient(0deg,rgba(20,22,24,.95),rgba(20,22,24,.6) 64%,transparent);}
+  #ctrlrow{display:flex;justify-content:center;gap:8px;}
+  #palrow{display:flex;align-items:center;gap:8px;width:100%;}
   .tabs{display:flex;flex-direction:column;gap:4px;}
   .tabs button{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);
     border-radius:8px;width:36px;padding:5px 0;font-size:.84rem;font-weight:700;}
@@ -143,25 +144,27 @@
   <div id="stage">
     <div id="vig"></div>
     <div id="topbar">
-      <div id="title">麻雀 点数計算<small>TABLE SCORING</small></div>
       <div id="status"></div>
-      <div class="sp"></div>
-      <button class="ic" id="undo">戻す</button>
-      <button class="ic" id="clear">クリア</button>
-      <button class="ic on" id="snd">効果音</button>
-      <button class="ic" id="gear">設定</button>
     </div>
 
     <div id="cntpill"><b id="cnt">0</b>/14<span id="wlab"></span></div>
     <div id="scrollcue">▼ メニュー</div>
 
     <div id="palbar">
-      <div class="tabs" id="tabs">
-        <button data-s="0" class="on">萬</button><button data-s="1">筒</button>
-        <button data-s="2">索</button><button data-s="3">字</button>
+      <div id="ctrlrow">
+        <button class="ic" id="undo">戻す</button>
+        <button class="ic" id="clear">クリア</button>
+        <button class="ic on" id="snd">効果音</button>
+        <button class="ic" id="gear">設定</button>
       </div>
-      <div class="pal" id="pal"></div>
-      <button class="calc" id="calc" disabled>計算開始</button>
+      <div id="palrow">
+        <div class="tabs" id="tabs">
+          <button data-s="0" class="on">萬</button><button data-s="1">筒</button>
+          <button data-s="2">索</button><button data-s="3">字</button>
+        </div>
+        <div class="pal" id="pal"></div>
+        <button class="calc" id="calc" disabled>計算開始</button>
+      </div>
     </div>
 
     <div id="threefail">3D表示を読み込めませんでした。<br>通信環境をご確認のうえ、ページを再読み込みしてください。</div>
