@@ -49,21 +49,22 @@
   /* palette bar */
   #palbar{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:3;
     padding:8px max(12px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
-    background:linear-gradient(0deg,rgba(20,22,24,.95),rgba(20,22,24,.6) 64%,transparent);}
+    background:linear-gradient(0deg,rgba(20,22,24,.7),rgba(20,22,24,.32) 70%,transparent);
+    backdrop-filter:blur(14px) saturate(118%);-webkit-backdrop-filter:blur(14px) saturate(118%);}
   #ctrlrow{display:flex;justify-content:center;gap:8px;}
-  #palrow{display:flex;align-items:center;gap:8px;width:100%;}
+  #palrow{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;}
   .tabs{display:flex;flex-direction:column;gap:4px;}
   .tabs button{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);
     border-radius:8px;width:36px;padding:5px 0;font-size:.84rem;font-weight:700;}
   .tabs button.on{background:rgba(230,200,120,.16);color:var(--gold);border-color:rgba(230,200,120,.4);}
-  .pal{flex:1;display:flex;gap:5px;overflow-x:auto;padding:2px 0;scrollbar-width:none;}
+  .pal{flex:1;display:flex;justify-content:center;gap:5px;overflow-x:auto;padding:2px 0;scrollbar-width:none;}
   .pal::-webkit-scrollbar{display:none;}
   .pal button{flex:0 0 auto;appearance:none;border:none;background:none;padding:0;border-radius:6px;overflow:hidden;
-    box-shadow:0 2px 7px rgba(0,0,0,.5);height:56px;}
+    box-shadow:0 2px 7px rgba(0,0,0,.5);height:42px;}
   .pal button:active{transform:scale(.93);}
   .pal img{display:block;height:100%;width:auto;}
-  .calc{flex:0 0 auto;border:none;color:#04210f;font-weight:800;letter-spacing:.1em;border-radius:12px;
-    padding:0 16px;height:56px;font-size:.92rem;background:linear-gradient(180deg,#f0d98c,#d8b24c);
+  .calc{flex:0 0 auto;border:none;color:#04210f;font-weight:800;letter-spacing:.1em;border-radius:10px;
+    padding:0 14px;height:42px;font-size:.82rem;background:linear-gradient(180deg,#f0d98c,#d8b24c);
     box-shadow:0 6px 18px rgba(216,178,76,.34);}
   .calc:disabled{background:rgba(255,255,255,.06);color:var(--muted);box-shadow:none;border:1px solid var(--line);font-weight:600;}
   .calc.ready{animation:cg 2s ease-in-out infinite;}
@@ -120,16 +121,16 @@
   #rotate.show{display:flex;}
   #rotate .ro{font-size:2.4rem;margin-bottom:6px;}
   /* scroll cue on table */
-  #scrollcue{position:absolute;left:50%;bottom:calc(74px + env(safe-area-inset-bottom));transform:translateX(-50%);
-    display:none;z-index:3;color:var(--gold);font-size:.8rem;letter-spacing:.1em;text-align:center;
-    background:rgba(10,20,14,.6);border:1px solid rgba(230,200,120,.35);border-radius:999px;padding:7px 16px;
-    backdrop-filter:blur(8px);animation:bob 1.4s ease-in-out infinite;}
+  #scrollcue{position:absolute;left:max(12px,env(safe-area-inset-left));bottom:calc(14px + env(safe-area-inset-bottom));
+    transform:none;display:none;z-index:3;color:var(--gold);font-size:.62rem;letter-spacing:.06em;text-align:center;
+    background:rgba(10,20,14,.5);border:1px solid rgba(230,200,120,.3);border-radius:999px;padding:5px 10px;
+    backdrop-filter:blur(8px);animation:bob 1.6s ease-in-out infinite;}
   #scrollcue.show{display:block;}
-  @keyframes bob{50%{transform:translate(-50%,4px);}}
+  @keyframes bob{50%{transform:translateY(3px);}}
 
   /* result panel (scroll down) */
   #resultpanel{position:relative;width:100%;min-height:100dvh;
-    background:radial-gradient(120% 95% at 50% 28%,#103726 0%,#0a2418 46%,#06120c 100%);
+    background:radial-gradient(120% 95% at 50% 30%,#3a3d40 0%,#2b2d30 46%,#1c1e20 100%);
     display:flex;align-items:center;justify-content:center;padding:48px 24px;}
   .rp-inner{width:100%;max-width:1000px;text-align:center;}
   #rp-hint{color:var(--muted);font-size:.95rem;letter-spacing:.06em;}
@@ -159,7 +160,7 @@
   #rp-again{background:linear-gradient(180deg,#f0d98c,#d8b24c);color:#04210f;border:none;font-weight:700;}
 
   /* 役満：1枚目の画像のような巨大赤文字 */
-  #resultpanel.yakuman{background:radial-gradient(120% 95% at 50% 30%,#15402a 0%,#0c2c1c 46%,#06140d 100%);}
+  #resultpanel.yakuman{background:radial-gradient(120% 95% at 50% 30%,#43413a 0%,#2e2c28 46%,#1a1916 100%);}
   #resultpanel.yakuman #rp-yaku{flex-direction:column;gap:2px;margin:8px 0 18px;}
   #resultpanel.yakuman #rp-yaku .y{font-size:clamp(3rem,13vw,8rem);font-weight:800;color:#df2a1c;
     text-shadow:0 5px 0 rgba(110,8,0,.4),0 0 34px rgba(220,40,20,.35);letter-spacing:.02em;}
@@ -503,7 +504,7 @@ function gong(){if(!soundOn||!actx)return;[96,128,192,256].forEach((f,i)=>tone(f
   const s=actx.createBufferSource();s.buffer=b;const v=actx.createGain();v.gain.value=0.05;s.connect(v);v.connect(actx.destination);s.start();}
 
 /* ============ 3D table ============ */
-const T={W:0.6,H:0.84,D:0.36,GAP:0.06,Z:1.4};
+const T={W:0.6,H:0.84,D:0.36,GAP:0.1,Z:1.4};
 const FOV=26; // 望遠寄り（焦点距離深め）で牌を大きく見せる
 const CAM={
   stand:{pos:[0,1.25,12],look:[0,0.12,1.2],up:[0,1,0]},
@@ -539,7 +540,7 @@ function initComposer(){
   const host=document.getElementById('stage'),w=host.clientWidth,h=host.clientHeight;
   composer=new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene,camera));
-  bokehPass=new THREE.BokehPass(scene,camera,{focus:11,aperture:0.018,maxblur:0.009,width:w,height:h});
+  bokehPass=new THREE.BokehPass(scene,camera,{focus:11,aperture:0.032,maxblur:0.016,width:w,height:h});
   composer.addPass(bokehPass);
   composer.setSize(w,h);
 }
@@ -622,11 +623,14 @@ function buildHand(){
     t.mesh.rotation.x=0;t.mesh.position.set(0,T.H/2,0);
     t.stand={x:t.outer.position.x,z:sz};
     scene.add(t.outer);tiles.push(t);});
-  // 倒れた後：あがり牌以外は1列、あがり牌は手前に斜め置き、少しランダムにズラす
-  const others=[];for(let k=0;k<n;k++)if(k!==winPos)others.push(k);
-  const m=others.length,rowW=m*T.W+(m-1)*T.GAP,rx0=-rowW/2+T.W/2;
-  others.forEach((k,j)=>{tiles[k].flat={x:rx0+j*(T.W+T.GAP)+rndJ(0.05),z:T.Z+rndJ(0.06),yaw:rndJ(0.12)};});
-  tiles[winPos].flat={x:0.55,z:T.Z+T.H*0.95+0.5,yaw:0.5};
+  // 倒れた後：全牌を1列（中央より少し下）。あがり牌は右端に少し離して。
+  const order=[];for(let k=0;k<n;k++)if(k!==winPos)order.push(k);order.push(winPos);
+  const baseZ=2.25,extra=0.26;                       // baseZ:画面やや下、extra:あがり牌前の隙間
+  const rowW=n*T.W+(n-1)*T.GAP+extra;
+  let x=-rowW/2+T.W/2;
+  order.forEach(k=>{if(k===winPos)x+=extra;
+    tiles[k].flat={x:x+rndJ(0.012),z:baseZ+rndJ(0.02),yaw:rndJ(0.05)};
+    x+=T.W+T.GAP;});
 }
 function applyCam(){
   const a=CAM.stand,b=CAM.reveal,e=camP,L=(p,q)=>p+(q-p)*e;
@@ -710,15 +714,28 @@ function drawResultTexture(r,kYaku,scoreVal){
     g.lineWidth=sfs*0.06;g.strokeStyle='rgba(90,6,0,.5)';g.strokeText(sTxt,cx,H*0.92);
     g.fillStyle='#e8311f';g.fillText(sTxt,cx,H*0.92);
   } else {
-    const nf=(ys.length<=3?0.1:ys.length<=5?0.082:0.066)*H;
-    let y=H*0.19;
-    ys.forEach(yy=>{drawYakuLine(g,yy.name,yy.han,cx,y,nf);y+=nf*1.34;});
-    g.textAlign='center';
+    // 役名を横一列（牌の上）に、点数を下に
+    const all=r.yaku,sep=H*0.05;
+    const rowW=(nfv)=>{let tot=0;all.forEach((yy,i)=>{
+      g.font=`700 ${nfv}px "Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif`;const nw=g.measureText(yy.name).width;
+      g.font=`700 ${nfv*0.6}px sans-serif`;const hw=g.measureText(String(yy.han)).width;
+      tot+=nw+nfv*0.16+hw;if(i<all.length-1)tot+=sep;});return tot;};
+    let nf=H*0.085;while(rowW(nf)>W*0.94&&nf>18)nf*=0.95;
+    let x=cx-rowW(nf)/2;const yy0=H*0.16;
+    g.textAlign='left';g.textBaseline='middle';
+    for(let i=0;i<ys.length;i++){const yy=ys[i];
+      g.shadowColor='rgba(0,0,0,.55)';g.shadowBlur=nf*0.16;g.shadowOffsetY=nf*0.04;
+      g.font=`700 ${nf}px "Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif`;g.fillStyle='#f4f0e4';
+      g.fillText(yy.name,x,yy0);const nw=g.measureText(yy.name).width;
+      g.font=`700 ${nf*0.6}px sans-serif`;g.fillStyle='#df5b4a';
+      g.fillText(String(yy.han),x+nw+nf*0.16,yy0);const hw=g.measureText(String(yy.han)).width;
+      g.shadowBlur=0;g.shadowOffsetY=0;x+=nw+nf*0.16+hw+sep;}
+    g.textAlign='center';g.textBaseline='alphabetic';
     if(r.rank){g.font=`700 ${H*0.07}px "Hiragino Mincho ProN","Yu Mincho",serif`;g.fillStyle='#e6c878';
-      g.shadowColor='rgba(0,0,0,.5)';g.shadowBlur=H*0.012;g.fillText(r.rank,cx,H*0.77);g.shadowBlur=0;}
+      g.shadowColor='rgba(0,0,0,.5)';g.shadowBlur=H*0.012;g.fillText(r.rank,cx,H*0.83);g.shadowBlur=0;}
     const sTxt=Math.round(scoreVal).toLocaleString()+'点';
-    g.font=`800 ${H*0.17}px "Hiragino Kaku Gothic ProN",sans-serif`;g.fillStyle='#ecd183';
-    g.shadowColor='rgba(0,0,0,.55)';g.shadowBlur=H*0.022;g.shadowOffsetY=H*0.005;g.fillText(sTxt,cx,H*0.93);g.shadowBlur=0;g.shadowOffsetY=0;
+    g.font=`800 ${H*0.16}px "Hiragino Kaku Gothic ProN",sans-serif`;g.fillStyle='#ecd183';
+    g.shadowColor='rgba(0,0,0,.55)';g.shadowBlur=H*0.022;g.shadowOffsetY=H*0.005;g.fillText(sTxt,cx,H*0.955);g.shadowBlur=0;g.shadowOffsetY=0;
   }
   resultTex.needsUpdate=true;
 }
