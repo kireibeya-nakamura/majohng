@@ -143,6 +143,7 @@
   - loadFBXTiles: 元アトラスをImageで読込→各牌の表面セル(UV bbox)を「世界法線が上向き(+y)の頂点」から検出→新キャンバスにセル毎へ余白色(sampleIvory)を敷いて絵柄を ATLAS_SHRINK=0.82 で縮小描画
   - 旧 buildAtlasNormal/scaleFaceUV を撤去。法線マップは buildNormalFromCanvas(縮小後キャンバス) から生成（彫り込みも追従）
   - 調整: ATLAS_SHRINK（小さいほど余白大）。崩れたら 1.0 で実質無効化
+  - 壊れ対策: 面検出を厳格化(法線 vv.y>0.9)＋セルが大きすぎ(UV>0.4)なら適用スキップ（壊さず素通し）
 
 ---
 

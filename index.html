@@ -568,9 +568,9 @@ function loadFBXTiles(cb){
             const nor=m.geometry.attributes.normal,uv=m.geometry.attributes.uv;if(!nor||!uv)return null;
             let minU=1e9,maxU=-1e9,minV=1e9,maxV=-1e9,found=false;
             for(let i=0;i<nor.count;i++){vv.set(nor.getX(i),nor.getY(i),nor.getZ(i)).applyMatrix3(nMat).normalize();
-              if(vv.y>0.55){const u=uv.getX(i),w=uv.getY(i);
+              if(vv.y>0.9){const u=uv.getX(i),w=uv.getY(i);
                 if(u<minU)minU=u;if(u>maxU)maxU=u;if(w<minV)minV=w;if(w>maxV)maxV=w;found=true;}}
-            return found?{minU,maxU,minV,maxV}:null;
+            return found&&(maxU-minU)<0.4&&(maxV-minV)<0.4?{minU,maxU,minV,maxV}:null;
           });
           // 縮小アトラス生成（UVは変えず、絵柄だけ縮小＋余白）
           const nc=document.createElement('canvas');nc.width=W;nc.height=H;const ng=nc.getContext('2d');ng.drawImage(oc,0,0);
