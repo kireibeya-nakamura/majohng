@@ -716,6 +716,7 @@ function makeTile(i,win){
 function rndJ(a){return (Math.random()*2-1)*a;}
 function buildHand(){
   if(!THREE_OK)return;
+  clearTenbo();
   tiles.forEach(t=>scene.remove(t.outer));tiles=[];
   fallen=false;camP=0;applyCam();
   const n=sortedHand.length;if(!n)return;
@@ -895,7 +896,7 @@ function showResult(r,instant){
   const bd=document.getElementById('rp-bd'),btns=document.getElementById('rp-btns'),hint=document.getElementById('rp-hint');
   hint.style.display='none';btns.classList.remove('show');
   bd.textContent=r.bd+(r.yakuman?'':'　'+r.han+'翻 '+r.fu+'符');
-  if(instant){drawResultTexture(r,r.yaku.length,r.total);resultPlane.material.opacity=1;btns.classList.add('show');return;}
+  if(instant){drawResultTexture(r,r.yaku.length,r.total);resultPlane.material.opacity=1;btns.classList.add('show');throwTenbo(r.total,true);return;}
   drawResultTexture(r,0,0);resultPlane.material.opacity=0;
   tween(420,0,e=>resultPlane.material.opacity=e);
   const list=r.yaku,fu=r.fu,dealer=S.dealer,childCtx={dealer:false,tsumo:S.tsumo},step=r.yakuman?470:340,t0=320;
@@ -911,6 +912,7 @@ function showResult(r,instant){
   let end;const base=t0+list.length*step;
   if(dealer){setTimeout(()=>animScore(list.length,r.total,640),base+180);end=base+180+660;}else end=t0+(list.length-1)*step+300+120;
   setTimeout(()=>btns.classList.add('show'),end+180);
+  setTimeout(()=>throwTenbo(r.total,false),end+280);   // 役・点数表示の後に点棒を放り投げる
 }
 function hideResult(){
   if(resultPlane){resultPlane.visible=false;resultPlane.material.opacity=0;}
@@ -918,6 +920,75 @@ function hideResult(){
   const hint=document.getElementById('rp-hint');if(hint)hint.style.display='';
   const bd=document.getElementById('rp-bd');if(bd)bd.textContent='';
   const btns=document.getElementById('rp-btns');if(btns)btns.classList.remove('show');
+  clearTenbo();
+}
+
+/* ============ 点棒（支払い）演出 ============ */
+/* 点数分の点棒を画面手前（+z）外の上空から放物線で卓上へ放り投げる。
+   俯瞰カメラ（up=[0,0,-1]）なので +z が画面手前。盤面中央のスコアを避け、右下寄りに山を作る。 */
+let tenbos=[];                              // 現在卓上の点棒メッシュ
+const TENBO={L:1.25,W:0.12,H:0.07};         // 点棒の寸法（長辺/幅/高さ）
+let tenboTexCache={};
+// 点棒の上面テクスチャ（額面ごとに点パターンを変える）
+function tenboTexture(denom){
+  if(tenboTexCache[denom])return tenboTexCache[denom];
+  const W=512,H=64,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+  const grd=g.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#f8f2e3');grd.addColorStop(0.5,'#efe7d2');grd.addColorStop(1,'#e3d8be');
+  g.fillStyle=grd;g.fillRect(0,0,W,H);
+  const cy=H/2;
+  const dot=(x,r,col)=>{g.beginPath();g.arc(x,cy,r,0,Math.PI*2);g.fillStyle=col;g.fill();
+    g.lineWidth=1.4;g.strokeStyle='rgba(0,0,0,.18)';g.stroke();};
+  const row=(n,r,col,span)=>{const s=span||W*0.78,x0=W/2-s/2;
+    for(let i=0;i<n;i++)dot(x0+(n>1?s*(i/(n-1)):s/2),r,col);};
+  if(denom===100){ row(8,5,'#1d1d1d'); }                                   // 100点：黒点
+  else if(denom===1000){ row(5,8,'#d8352a'); }                            // 1000点：赤点
+  else if(denom===5000){                                                  // 5000点：中央青＋赤
+    dot(W/2,12,'#2f6fd0');[W*0.30,W*0.70].forEach(x=>dot(x,8,'#d8352a'));
+    [W*0.12,W*0.88].forEach(x=>dot(x,6,'#2f6fd0'));
+  } else {                                                                // 10000点：金中央＋虹
+    dot(W/2,14,'#e8b53a');
+    const cols=['#d8352a','#2f6fd0','#3aa758','#d8352a','#2f6fd0','#3aa758'];
+    [W*0.18,W*0.31,W*0.40,W*0.60,W*0.69,W*0.82].forEach((x,i)=>dot(x,7,cols[i]));
+  }
+  const t=new THREE.CanvasTexture(c);t.anisotropy=4;if(THREE.sRGBEncoding!==undefined)t.encoding=THREE.sRGBEncoding;
+  return tenboTexCache[denom]=t;
+}
+function makeTenbo(denom){
+  const geo=new THREE.BoxGeometry(TENBO.L,TENBO.H,TENBO.W);
+  const body=new THREE.MeshStandardMaterial({color:0xeee4cd,roughness:0.55,metalness:0.0});
+  const top=new THREE.MeshStandardMaterial({map:tenboTexture(denom),roughness:0.5,metalness:0.0});
+  // BoxGeometryの面順 [+x,-x,+y,-y,+z,-z]：上面(+y, index2)だけ点パターン
+  const mesh=new THREE.Mesh(geo,[body,body,top,body,body,body]);
+  mesh.castShadow=true;mesh.receiveShadow=true;return mesh;
+}
+// 点数を 10000/5000/1000/100 の点棒へ分解（安全のため枚数上限）
+function tenboBreakdown(total){
+  const denoms=[10000,5000,1000,100];let rem=Math.max(0,Math.round(total));const out=[];
+  denoms.forEach(d=>{let c=Math.floor(rem/d);rem-=c*d;while(c-->0)out.push(d);});
+  return out.slice(0,14);
+}
+function clearTenbo(){if(!scene)return;
+  tenbos.forEach(m=>{scene.remove(m);if(m.geometry)m.geometry.dispose();});tenbos=[];}
+function throwTenbo(total,instant){
+  if(!THREE_OK||!scene)return;clearTenbo();
+  const list=tenboBreakdown(total);if(!list.length)return;
+  const N=list.length,s=TENBO.W*1.5,cx=2.4,cz=2.9; // スコア中央を避け右下寄りに山を作る
+  list.forEach((denom,k)=>{
+    const mesh=makeTenbo(denom);
+    const tx=cx+rndJ(0.05), tz=cz+(k-(N-1)/2)*s+rndJ(0.015), ty=TENBO.H*0.5+(k%2)*0.004, yaw=rndJ(0.06);
+    if(instant){mesh.position.set(tx,ty,tz);mesh.rotation.set(0,yaw,0);scene.add(mesh);tenbos.push(mesh);return;}
+    // 画面手前外（+z）の上空からスタート
+    const sx=tx+rndJ(0.6), sz=6.8+rndJ(0.5), sy=2.5+rndJ(0.3);
+    mesh.position.set(sx,sy,sz);
+    const spin0=(Math.random()*2-1)*Math.PI*1.4, tilt0=(Math.random()*2-1)*0.9;
+    scene.add(mesh);tenbos.push(mesh);
+    tween(520,k*90,(e,p)=>{
+      mesh.position.x=sx+(tx-sx)*e;mesh.position.z=sz+(tz-sz)*e;
+      mesh.position.y=sy+(ty-sy)*e+Math.sin(Math.PI*p)*1.4; // 放物線
+      mesh.rotation.y=yaw+spin0*(1-e);mesh.rotation.x=tilt0*(1-e);
+    },()=>{mesh.position.set(tx,ty,tz);mesh.rotation.set(0,yaw,0);clack();});
+  });
 }
 
 /* ============ render / state ============ */

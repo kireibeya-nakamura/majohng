@@ -5,6 +5,16 @@
 
 ---
 
+## 2026-06-17 Claude（点棒の支払い演出を実装）
+- アガリ演出の最後に、点数分の点棒を画面手前外の上空から放物線で卓上へ放り投げる演出を追加
+- 点棒モデルは手作り（細い箱 BoxGeometry + キャンバステクスチャの点パターン）。`Mahjong_Tenbow.fbx` は未使用（後で差し替え可）
+- 額面ごとに点パターンを変更：100=黒点8 / 1000=赤点5 / 5000=青中央+赤 / 10000=金中央+虹
+- `tenboBreakdown(total)` で 10000/5000/1000/100 に分解（枚数上限14）
+- 着地位置は盤面中央のスコアを避け右下寄り（cx=2.4, cz=2.9）に山状に整列。俯瞰カメラ(up=[0,0,-1])なので+zが画面手前
+- 関数群：`tenboTexture / makeTenbo / tenboBreakdown / clearTenbo / throwTenbo(total,instant)`、状態は `tenbos[]`
+- 呼び出し：`showResult` 末尾（end+280ms後）に `throwTenbo(r.total,false)`、reduce時(instant)は即配置。`hideResult` と `buildHand` 冒頭で `clearTenbo()`
+- 着地ごとに `clack()` を鳴らす。調整ポイント：TENBO寸法 / cx,cz / 放物線の高さ(1.4) / 投げる時間(520ms,90ms間隔)
+
 ## 2026-06-16 Claude
 - GitHubリポジトリ（Majohng）を作成
 - `mahjong-table-3d.html` をpush
