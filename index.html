@@ -19,7 +19,7 @@
 
   /* full-screen stage */
   #stage{position:relative;width:100%;height:100dvh;overflow:hidden;
-    background:radial-gradient(130% 100% at 50% 30%,#3a3d40 0%,#2b2d30 46%,#1c1e20 100%);}
+    background:radial-gradient(130% 100% at 50% 26%,#26282c 0%,#15171a 50%,#090a0c 100%);}
   #stage canvas{display:block;width:100%;height:100%;touch-action:pan-y;}
   #vig{position:absolute;inset:0;pointer-events:none;
     box-shadow:inset 0 0 170px 44px rgba(0,0,0,.74),inset 0 -56px 120px rgba(0,0,0,.5);}
@@ -578,23 +578,53 @@ function texFor(i){if(texCache[i])return texCache[i];const c=faceCanvas(i,200,28
 function winTexFor(i){if(winTexCache[i])return winTexCache[i];const c=faceCanvas(i,200,284,true);
   const t=new THREE.CanvasTexture(c);t.anisotropy=4;if(THREE.sRGBEncoding!==undefined)t.encoding=THREE.sRGBEncoding;return winTexCache[i]=t;}
 
+function makeFeltTextures(){
+  const N=512;
+  // アルベド：細かいベロアのムラ
+  const mc=document.createElement('canvas');mc.width=mc.height=N;const mg=mc.getContext('2d');
+  mg.fillStyle='#23332c';mg.fillRect(0,0,N,N);
+  const img=mg.getImageData(0,0,N,N),d=img.data;
+  for(let i=0;i<d.length;i+=4){const n=(Math.random()-0.5)*26;
+    d[i]=Math.max(0,Math.min(255,d[i]+n));d[i+1]=Math.max(0,Math.min(255,d[i+1]+n));d[i+2]=Math.max(0,Math.min(255,d[i+2]+n));}
+  mg.putImageData(img,0,0);
+  const map=new THREE.CanvasTexture(mc);map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(9,9);
+  if(THREE.sRGBEncoding!==undefined)map.encoding=THREE.sRGBEncoding;map.anisotropy=4;
+  // ノーマルマップ：起毛の微細な凹凸
+  const nc=document.createElement('canvas');nc.width=nc.height=N;const ng=nc.getContext('2d');
+  const nimg=ng.createImageData(N,N),nd=nimg.data,hh=new Float32Array(N*N);
+  for(let i=0;i<hh.length;i++)hh[i]=Math.random();
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x;
+    const hl=hh[y*N+((x-1+N)%N)],hr=hh[y*N+((x+1)%N)],hu=hh[((y-1+N)%N)*N+x],hd=hh[((y+1)%N)*N+x];
+    let nx=(hl-hr)*0.5,ny=(hu-hd)*0.5,nz=1;const len=Math.hypot(nx,ny,nz);nx/=len;ny/=len;nz/=len;
+    const k=i*4;nd[k]=(nx*0.5+0.5)*255;nd[k+1]=(ny*0.5+0.5)*255;nd[k+2]=(nz*0.5+0.5)*255;nd[k+3]=255;}
+  ng.putImageData(nimg,0,0);
+  const normal=new THREE.CanvasTexture(nc);normal.wrapS=normal.wrapT=THREE.RepeatWrapping;normal.repeat.set(9,9);normal.anisotropy=4;
+  return {map,normal};
+}
 function initScene(){
   const host=document.getElementById('stage');
   renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
   renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+  if(THREE.sRGBEncoding!==undefined)renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   host.insertBefore(renderer.domElement,document.getElementById('vig'));
   scene=new THREE.Scene();
   camera=new THREE.PerspectiveCamera(FOV,1,0.1,200);
-  // 怪しい雰囲気：ほぼ真上のスポットライト＋柄を照らす前方フィル
-  scene.add(new THREE.AmbientLight(0x6a7488,0.42));
-  const spot=new THREE.SpotLight(0xfff1d4,2.0,80,Math.PI/4.4,0.6,1.0);
-  spot.position.set(0,18,7);spot.target.position.set(0,0,2.4);scene.add(spot);scene.add(spot.target);
-  const fill=new THREE.DirectionalLight(0xfff0dc,0.42);fill.position.set(0,6,14);scene.add(fill);
-  const fill2=new THREE.DirectionalLight(0x8aa0c0,0.14);fill2.position.set(-5,5,-6);scene.add(fill2);
-  // felt
+  // 怪しい雰囲気：ほぼ真上のスポットライト（影付き）＋柄を照らす弱い前方フィル
+  scene.add(new THREE.AmbientLight(0x5a6478,0.28));
+  const spot=new THREE.SpotLight(0xfff1d4,2.7,90,Math.PI/4.6,0.55,1.0);
+  spot.position.set(0,19,6);spot.target.position.set(0,0,2.2);scene.add(spot);scene.add(spot.target);
+  spot.castShadow=true;spot.shadow.mapSize.set(2048,2048);
+  spot.shadow.camera.near=4;spot.shadow.camera.far=60;spot.shadow.bias=-0.0004;spot.shadow.radius=4;
+  const fill=new THREE.DirectionalLight(0xffeccf,0.32);fill.position.set(0,6,14);scene.add(fill);
+  const fill2=new THREE.DirectionalLight(0x7e94b8,0.1);fill2.position.set(-5,5,-6);scene.add(fill2);
+  // felt（ベロア／ベルベット質感）
+  const ft=makeFeltTextures();
   const felt=new THREE.Mesh(new THREE.PlaneGeometry(60,60),
-    new THREE.MeshStandardMaterial({color:0x2a2c2e,roughness:0.98}));
-  felt.rotation.x=-Math.PI/2;felt.position.y=0;scene.add(felt);
+    new THREE.MeshStandardMaterial({color:0x20302a,roughness:0.96,metalness:0.0,
+      map:ft.map,normalMap:ft.normal,normalScale:new THREE.Vector2(0.5,0.5)}));
+  felt.rotation.x=-Math.PI/2;felt.position.y=0;felt.receiveShadow=true;scene.add(felt);
   // decorative back + side walls (green-topped rows)
   buildWalls();
   initResultPlane();
@@ -622,7 +652,8 @@ function wallMats(){return [
 function buildWalls(){
   const geo=new THREE.BoxGeometry(T.W,T.D,T.H); // lying tile (green top)
   const mats=wallMats();
-  const make=(x,z,rotY)=>{const m=new THREE.Mesh(geo,mats);m.position.set(x,T.D/2,z);m.rotation.y=rotY;scene.add(m);};
+  const make=(x,z,rotY)=>{const m=new THREE.Mesh(geo,mats);m.position.set(x,T.D/2,z);m.rotation.y=rotY;
+    m.castShadow=true;m.receiveShadow=true;scene.add(m);};
   const N=15,span=N*(T.W+0.04),x0=-span/2+T.W/2;
   for(let k=0;k<N;k++){make(x0+k*(T.W+0.04),-7.5,0);}      // back
   const Nz=9,zspan=Nz*(T.W+0.04),z0=-7+ T.W;
@@ -645,6 +676,7 @@ function makeTile(i,win){
     mesh=new THREE.Mesh(geo,[ivory,ivory,greenTop,ivory,face,green]);
   }
   mesh.position.set(0,T.H/2,0);
+  mesh.castShadow=true;mesh.receiveShadow=true;
   outer.add(mesh);outer.userData={i,win};
   return {outer,mesh,i,win};
 }

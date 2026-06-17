@@ -117,6 +117,14 @@
 - スポットライトで柄面が真っ黒問題 → 牌の正面（縦の柄面）に光が当たるよう調整
   - AmbientLight 0.22→0.42、SpotLightを少し前傾(pos y18 z7→target z2.4)、前方フィル(0xfff0dc,0.42, z14)を追加。怪しい雰囲気は維持
 
+## 2026-06-17 Claude（リアル化：影・トーンマップ・ベロア卓）
+- レンダラー：outputEncoding=sRGB、ACESFilmicToneMapping(exposure1.05)、shadowMap有効(PCFSoft)
+- スポットライトに影を付与（castShadow, 2048マップ, bias-0.0004, radius4）、Ambient0.42→0.28でコントラスト強化、spot強度2.0→2.7
+- 牌・壁(積み牌)に castShadow/receiveShadow、卓(felt)に receiveShadow
+- 卓をベロア/ベルベット質感に：makeFeltTextures()で微細ノイズのアルベド＋ノーマルマップ生成、色0x20302a roughness0.96、normalScale0.5、repeat9
+- 背景(#stage)を暗く（コントラスト/リアル感向上）
+- 要調整候補: 露出/スポット強度/影の柔らかさ/ベロアの色味は実機で追い込み
+
 ---
 
 ## 引き継ぎ時の注意
