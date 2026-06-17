@@ -927,7 +927,7 @@ function hideResult(){
 /* 点数分の点棒を画面手前（+z）外の上空から放物線で卓上へ放り投げる。
    俯瞰カメラ（up=[0,0,-1]）なので +z が画面手前。盤面中央のスコアを避け、右下寄りに山を作る。 */
 let tenbos=[];                              // 現在卓上の点棒メッシュ
-const TENBO={L:1.25,W:0.12,H:0.07};         // 点棒の寸法（長辺/幅/高さ）
+const TENBO={L:1.5,W:0.17,H:0.09};          // 点棒の寸法（長辺/幅/高さ・視認性重視で大きめ）
 let tenboTexCache={};
 // 点棒の上面テクスチャ（額面ごとに点パターンを変える）
 function tenboTexture(denom){
@@ -973,19 +973,20 @@ function clearTenbo(){if(!scene)return;
 function throwTenbo(total,instant){
   if(!THREE_OK||!scene)return;clearTenbo();
   const list=tenboBreakdown(total);if(!list.length)return;
-  const N=list.length,s=TENBO.W*1.5,cx=2.4,cz=2.9; // スコア中央を避け右下寄りに山を作る
+  // 倒れた牌より手前（+z）・中央に着地。牌(高さ~0.36)に隠れない手前の空きスペース。
+  const N=list.length,s=TENBO.W*1.4,cx=0,cz=3.5;
   list.forEach((denom,k)=>{
     const mesh=makeTenbo(denom);
-    const tx=cx+rndJ(0.05), tz=cz+(k-(N-1)/2)*s+rndJ(0.015), ty=TENBO.H*0.5+(k%2)*0.004, yaw=rndJ(0.06);
+    const tx=cx+rndJ(0.06), tz=cz+(k-(N-1)/2)*s+rndJ(0.02), ty=TENBO.H*0.5+0.02+(k%2)*0.004, yaw=rndJ(0.06);
     if(instant){mesh.position.set(tx,ty,tz);mesh.rotation.set(0,yaw,0);scene.add(mesh);tenbos.push(mesh);return;}
-    // 画面手前外（+z）の上空からスタート
-    const sx=tx+rndJ(0.6), sz=6.8+rndJ(0.5), sy=2.5+rndJ(0.3);
+    // 画面手前外（+z＝画面下）のすぐ外からスタートし、放物線で画面内へ
+    const sx=tx+rndJ(0.5), sz=5.6+rndJ(0.4), sy=2.1+rndJ(0.3);
     mesh.position.set(sx,sy,sz);
     const spin0=(Math.random()*2-1)*Math.PI*1.4, tilt0=(Math.random()*2-1)*0.9;
     scene.add(mesh);tenbos.push(mesh);
-    tween(520,k*90,(e,p)=>{
+    tween(540,k*100,(e,p)=>{
       mesh.position.x=sx+(tx-sx)*e;mesh.position.z=sz+(tz-sz)*e;
-      mesh.position.y=sy+(ty-sy)*e+Math.sin(Math.PI*p)*1.4; // 放物線
+      mesh.position.y=sy+(ty-sy)*e+Math.sin(Math.PI*p)*0.9; // 放物線
       mesh.rotation.y=yaw+spin0*(1-e);mesh.rotation.x=tilt0*(1-e);
     },()=>{mesh.position.set(tx,ty,tz);mesh.rotation.set(0,yaw,0);clack();});
   });
