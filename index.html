@@ -731,7 +731,7 @@ function buildHand(){
   const others=[];for(let k=0;k<n;k++)if(k!==winPos)others.push(k);
   const m=others.length,rowW=m*T.W+(m-1)*T.GAP,rx0=-rowW/2+T.W/2;
   others.forEach((k,j)=>{tiles[k].flat={x:rx0+j*(T.W+T.GAP)+rndJ(0.05),z:T.Z+rndJ(0.06),yaw:rndJ(0.12)};});
-  tiles[winPos].flat={x:1.1,z:T.Z+T.H*0.95+0.5,yaw:0.5}; // 右寄せ（点棒より左、牌列に被らない手前）
+  tiles[winPos].flat={x:1.9,z:T.Z+T.H*0.95+0.2,yaw:0.5}; // 右寄せ（点棒より左・手前、点棒とはz方向に隙間）
 }
 function applyCam(){
   const a=CAM.stand,b=CAM.reveal,e=camP,L=(p,q)=>p+(q-p)*e;
@@ -1012,7 +1012,7 @@ function throwTenbo(total,instant){
   const list=tenboBreakdown(total);if(!list.length)return;
   // 倒れた牌に被らない右下（+x=右, +z=手前）の空きスペースへ着地。
   // 重ならないよう「ほぼ平行・小ジッタ」の段組みにし、本数が多い時は上に積む。
-  const cx=1.9,cz=3.55,dz=0.30,maxRows=6;
+  const cx=2.6,cz=3.9,dz=0.30,maxRows=5;
   const N=list.length;
   list.forEach((denom,k)=>{
     const mesh=makeTenbo(denom);
