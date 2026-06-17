@@ -523,7 +523,28 @@ function loadThree(cb){if(window.THREE)return cb(true);
 
 /* ---- FBX 3Dタイル（失敗時は従来の描画牌にフォールバック） ---- */
 const USE_FBX=true;
-let fbxReady=false,tileGeoms=[],atlasTex=null;
+let fbxReady=false,tileGeoms=[],atlasTex=null,atlasNormal=null;
+// テクスチャの濃淡（文字）から彫り込み用の法線マップを生成
+function buildAtlasNormal(cb){
+  const im=new Image();im.crossOrigin='anonymous';
+  im.onload=()=>{try{
+    const w=Math.min(1024,im.naturalWidth||512),h=Math.min(1024,im.naturalHeight||512);
+    const sc=document.createElement('canvas');sc.width=w;sc.height=h;const sg=sc.getContext('2d');
+    sg.drawImage(im,0,0,w,h);const src=sg.getImageData(0,0,w,h).data;
+    const H=new Float32Array(w*h);
+    for(let i=0;i<w*h;i++){const r=src[i*4],g=src[i*4+1],b=src[i*4+2];H[i]=(0.299*r+0.587*g+0.114*b)/255;}
+    const nc=document.createElement('canvas');nc.width=w;nc.height=h;const ng=nc.getContext('2d');
+    const nimg=ng.createImageData(w,h),nd=nimg.data,st=2.2;
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;
+      const xl=H[y*w+Math.max(0,x-1)],xr=H[y*w+Math.min(w-1,x+1)],
+            yu=H[Math.max(0,y-1)*w+x],yd=H[Math.min(h-1,y+1)*w+x];
+      let nx=(xl-xr)*st,ny=(yu-yd)*st,nz=1;const len=Math.hypot(nx,ny,nz);
+      const k=i*4;nd[k]=(nx/len*0.5+0.5)*255;nd[k+1]=(ny/len*0.5+0.5)*255;nd[k+2]=(nz/len*0.5+0.5)*255;nd[k+3]=255;}
+    ng.putImageData(nimg,0,0);
+    const t=new THREE.CanvasTexture(nc);t.flipY=true;t.anisotropy=4;cb(t);
+  }catch(e){console.warn('atlas normal build failed',e);cb(null);}};
+  im.onerror=()=>cb(null);im.src='assets/Mahjong.png';
+}
 // FBXメッシュindex（traversal順）→ アプリ牌index(0..33: 萬1-9,筒1-9,索1-9,東南西北白發中)
 const FBX_POS_ORDER=[33,13,26,5,29,24,20,8,1, 18,7,32,30,2,31,15,21,17, 23,22,19,6,11,10,12,27,0, 28,3,14,16,9,4,25];
 function loadFBXTiles(cb){
@@ -532,6 +553,7 @@ function loadFBXTiles(cb){
     if(!ok||!THREE.FBXLoader)return cb(false);
     atlasTex=new THREE.TextureLoader().load('assets/Mahjong.png');atlasTex.flipY=true;atlasTex.anisotropy=4;
     if(THREE.sRGBEncoding!==undefined)atlasTex.encoding=THREE.sRGBEncoding;
+    buildAtlasNormal(nt=>{atlasNormal=nt;if(fbxReady&&THREE_OK)render();});  // 彫り込み法線マップ（非同期、出来次第反映）
     new THREE.FBXLoader().load('assets/MahjongPi_Yellow.fbx',obj=>{
       try{
         obj.updateWorldMatrix(true,true);const meshes=[];obj.traverse(c=>{if(c.isMesh)meshes.push(c);});
@@ -665,6 +687,7 @@ function makeTile(i,win){
   if(fbxReady&&tileGeoms[i]){
     const mat=new THREE.MeshPhysicalMaterial({map:atlasTex,roughness:0.44,metalness:0.0,
       clearcoat:0.35,clearcoatRoughness:0.34});
+    if(atlasNormal){mat.normalMap=atlasNormal;mat.normalScale=new THREE.Vector2(0.9,0.9);}
     if(win){mat.emissive=new THREE.Color(0x4a3a12);mat.emissiveIntensity=0.55;}
     mesh=new THREE.Mesh(tileGeoms[i],mat);
   }else{
