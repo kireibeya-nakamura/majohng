@@ -547,6 +547,15 @@ function buildAtlasNormal(cb){
 }
 // FBXメッシュindex（traversal順）→ アプリ牌index(0..33: 萬1-9,筒1-9,索1-9,東南西北白發中)
 const FBX_POS_ORDER=[33,13,26,5,29,24,20,8,1, 18,7,32,30,2,31,15,21,17, 23,22,19,6,11,10,12,27,0, 28,3,14,16,9,4,25];
+const TEX_CHAR_SCALE=1.14; // >1で文字を小さく（面に余白）。1.0で等倍
+// 各牌のUVを面の中心から拡縮して文字サイズを調整
+function scaleFaceUV(g,s){const uv=g.attributes.uv;if(!uv||s===1)return;
+  let minU=1e9,maxU=-1e9,minV=1e9,maxV=-1e9;
+  for(let i=0;i<uv.count;i++){const u=uv.getX(i),v=uv.getY(i);
+    if(u<minU)minU=u;if(u>maxU)maxU=u;if(v<minV)minV=v;if(v>maxV)maxV=v;}
+  const cu=(minU+maxU)/2,cv=(minV+maxV)/2;
+  for(let i=0;i<uv.count;i++){uv.setXY(i,cu+(uv.getX(i)-cu)*s,cv+(uv.getY(i)-cv)*s);}
+  uv.needsUpdate=true;}
 function loadFBXTiles(cb){
   const base='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
   loadScriptSeq([base+'libs/fflate.min.js',base+'curves/NURBSUtils.js',base+'curves/NURBSCurve.js',base+'loaders/FBXLoader.js'],ok=>{
@@ -563,6 +572,7 @@ function loadFBXTiles(cb){
           g.rotateX(Math.PI/2);                       // 面+y→+z（牌を立てる）
           g.computeBoundingBox();const sz=new THREE.Vector3();g.boundingBox.getSize(sz);
           g.scale(T.W/sz.x,T.H/sz.y,T.D/sz.z);g.computeVertexNormals();
+          scaleFaceUV(g,TEX_CHAR_SCALE);   // 文字を小さく（面に余白）
           tileGeoms[appIdx]=g;
         });
         fbxReady=true;cb(true);
