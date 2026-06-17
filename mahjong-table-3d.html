@@ -229,10 +229,27 @@
           <span class="seg" id="win2"><button data-v="ron" class="on">ロン</button><button data-v="tsumo">ツモ</button></span>
         </div>
         <div class="rps-row">
-          <span class="lab">特殊</span>
-          <button class="tog" id="haitei">海底摸月</button>
-          <button class="tog" id="houtei">河底撈魚</button>
+          <span class="lab">立直</span>
+          <span class="seg" id="riichi2"><button data-v="off" class="on">なし</button><button data-v="on">立直</button><button data-v="double">ダブル</button></span>
+        </div>
+        <div class="rps-row">
+          <span class="lab">場風</span>
+          <span class="seg" id="round2"><button data-v="27" class="on">東</button><button data-v="28">南</button></span>
+          <span class="lab">自風</span>
+          <span class="seg" id="seat2"><button data-v="27">東</button><button data-v="28" class="on">南</button><button data-v="29">西</button><button data-v="30">北</button></span>
+        </div>
+        <div class="rps-row">
+          <span class="lab">状況役</span>
           <button class="tog" id="ippatsu">一発</button>
+          <button class="tog" id="haitei">海底</button>
+          <button class="tog" id="houtei">河底</button>
+          <button class="tog" id="rinshan">嶺上</button>
+          <button class="tog" id="chankan">槍槓</button>
+        </div>
+        <div class="rps-row">
+          <span class="lab">ドラ</span>
+          <span class="step"><button id="dm2">−</button><b id="dv2">0</b><button id="dp2">＋</button></span>
+          <span class="lab" style="opacity:.6">赤ドラも数に含めて</span>
         </div>
       </div>
       <div id="rp-hint">「計算開始」を押すと、上の卓に結果が表示されます</div>
@@ -479,12 +496,12 @@ const palCache={};
 function palImg(i){if(palCache[i])return palCache[i];const c=faceCanvas(i,108,150,false);return palCache[i]=c.toDataURL();}
 
 /* ============ state ============ */
-const S={dealer:false,tsumo:false,riichi:false,dbl:false,roundWind:27,seatWind:28,dora:0,haitei:false,houtei:false,ippatsu:false};
+const S={dealer:false,tsumo:false,riichi:false,dbl:false,roundWind:27,seatWind:28,dora:0,haitei:false,houtei:false,ippatsu:false,rinshan:false,chankan:false};
 let hand=[],winPos=0,lastResult=null,lastValid=false,soundOn=true,actx=null;
 const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
 let sortedHand=[],winTile=null;
 function buildCtx(){return {winTile,tsumo:S.tsumo,dealer:S.dealer,roundWind:S.roundWind,seatWind:S.seatWind,dora:S.dora,
-  riichi:S.riichi,doubleRiichi:S.dbl,ippatsu:S.ippatsu,haitei:S.haitei,houtei:S.houtei,rinshan:false,chankan:false,tenhou:false,chiihou:false};}
+  riichi:S.riichi,doubleRiichi:S.dbl,ippatsu:S.ippatsu,haitei:S.haitei,houtei:S.houtei,rinshan:S.rinshan,chankan:S.chankan,tenhou:false,chiihou:false};}
 
 /* ============ sound ============ */
 function ensureCtx(){if(!actx){try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(actx&&actx.state==='suspended')actx.resume();}
@@ -1012,7 +1029,7 @@ function throwTenbo(total,instant){
   const list=tenboBreakdown(total);if(!list.length)return;
   // 倒れた牌に被らない右下（+x=右, +z=手前）の空きスペースへ着地。
   // 重ならないよう「ほぼ平行・小ジッタ」の段組みにし、本数が多い時は上に積む。
-  const cx=2.6,cz=3.9,dz=0.30,maxRows=5;
+  const cx=3.3,cz=3.0,dz=0.30,maxRows=5; // 牌とx方向で分離（被らない）＋手前に出しすぎない高さ
   const N=list.length;
   list.forEach((denom,k)=>{
     const mesh=makeTenbo(denom);
@@ -1097,27 +1114,37 @@ document.getElementById('tabs').querySelectorAll('button').forEach(b=>b.onclick=
 // 親/子・ロン/ツモは設定パネルとスクロール先の両方を同期
 function syncSeg(id,val){const box=document.getElementById(id);if(!box)return;
   box.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===val));}
+// 状況役（海底/河底/嶺上/槍槓）は同時に一つだけ。一発は独立。
+const SIT_EX=[{id:'haitei',k:'haitei',tsumo:true},{id:'houtei',k:'houtei',tsumo:false},
+              {id:'rinshan',k:'rinshan',tsumo:true},{id:'chankan',k:'chankan',tsumo:false}];
+function refreshSit(){SIT_EX.forEach(o=>{const b=document.getElementById(o.id);if(b)b.classList.toggle('on',!!S[o.k]);});
+  const ib=document.getElementById('ippatsu');if(ib)ib.classList.toggle('on',S.ippatsu);}
 function setDealer(v){S.dealer=v;syncSeg('who',v?'oya':'ko');syncSeg('who2',v?'oya':'ko');render();}
 function setTsumo(v){S.tsumo=v;syncSeg('win',v?'tsumo':'ron');syncSeg('win2',v?'tsumo':'ron');
-  if(v&&S.houtei){S.houtei=false;document.getElementById('houtei').classList.remove('on');}
-  if(!v&&S.haitei){S.haitei=false;document.getElementById('haitei').classList.remove('on');}
-  render();}
-['who','who2'].forEach(id=>document.getElementById(id).querySelectorAll('button')
-  .forEach(b=>b.onclick=()=>setDealer(b.dataset.v==='oya')));
-['win','win2'].forEach(id=>document.getElementById(id).querySelectorAll('button')
-  .forEach(b=>b.onclick=()=>setTsumo(b.dataset.v==='tsumo')));
-// 特殊役トグル（海底/河底は排他、それぞれツモ/ロンを自動設定）
-const _hb=document.getElementById('haitei'),_ho=document.getElementById('houtei'),_ip=document.getElementById('ippatsu');
-_hb.onclick=()=>{S.haitei=!S.haitei;_hb.classList.toggle('on',S.haitei);
-  if(S.haitei){S.houtei=false;_ho.classList.remove('on');setTsumo(true);}else render();};
-_ho.onclick=()=>{S.houtei=!S.houtei;_ho.classList.toggle('on',S.houtei);
-  if(S.houtei){S.haitei=false;_hb.classList.remove('on');setTsumo(false);}else render();};
+  // ツモ専用(海底/嶺上)・ロン専用(河底/槍槓)で矛盾するものを解除
+  if(v){S.houtei=false;S.chankan=false;}else{S.haitei=false;S.rinshan=false;}
+  refreshSit();render();}
+function setRiichi(v){S.riichi=(v==='on'||v==='double');S.dbl=(v==='double');
+  syncSeg('riichi',v);syncSeg('riichi2',v);
+  if(!S.riichi){S.ippatsu=false;refreshSit();}render();}
+function setRound(v){S.roundWind=+v;syncSeg('round',v);syncSeg('round2',v);render();}
+function setSeat(v){S.seatWind=+v;syncSeg('seat',v);syncSeg('seat2',v);render();}
+function setDora(n){S.dora=Math.min(20,Math.max(0,n));
+  ['dv','dv2'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=S.dora;});render();}
+function bindBoth(ids,fn){ids.forEach(id=>{const box=document.getElementById(id);if(!box)return;
+  box.querySelectorAll('button').forEach(b=>b.onclick=()=>fn(b.dataset.v));});}
+bindBoth(['who','who2'],v=>setDealer(v==='oya'));
+bindBoth(['win','win2'],v=>setTsumo(v==='tsumo'));
+bindBoth(['riichi','riichi2'],setRiichi);
+bindBoth(['round','round2'],setRound);
+bindBoth(['seat','seat2'],setSeat);
+SIT_EX.forEach(o=>{const b=document.getElementById(o.id);if(!b)return;
+  b.onclick=()=>{const now=!S[o.k];SIT_EX.forEach(x=>S[x.k]=false);S[o.k]=now;
+    if(now)setTsumo(o.tsumo);else{refreshSit();render();}};});
+const _ip=document.getElementById('ippatsu');
 _ip.onclick=()=>{S.ippatsu=!S.ippatsu;_ip.classList.toggle('on',S.ippatsu);render();};
-bindSeg('riichi',v=>{S.riichi=(v==='on'||v==='double');S.dbl=(v==='double');});
-bindSeg('round',v=>S.roundWind=+v);
-bindSeg('seat',v=>S.seatWind=+v);
-document.getElementById('dp').onclick=()=>{S.dora=Math.min(20,S.dora+1);document.getElementById('dv').textContent=S.dora;render();};
-document.getElementById('dm').onclick=()=>{S.dora=Math.max(0,S.dora-1);document.getElementById('dv').textContent=S.dora;render();};
+['dp','dp2'].forEach(id=>{const b=document.getElementById(id);if(b)b.onclick=()=>setDora(S.dora+1);});
+['dm','dm2'].forEach(id=>{const b=document.getElementById(id);if(b)b.onclick=()=>setDora(S.dora-1);});
 document.getElementById('gear').onclick=()=>document.getElementById('setwrap').classList.add('show');
 document.getElementById('setclose').onclick=()=>document.getElementById('setwrap').classList.remove('show');
 document.getElementById('setwrap').onclick=(e)=>{if(e.target.id==='setwrap')e.currentTarget.classList.remove('show');};
