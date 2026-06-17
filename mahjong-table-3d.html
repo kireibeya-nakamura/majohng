@@ -585,11 +585,12 @@ function initScene(){
   host.insertBefore(renderer.domElement,document.getElementById('vig'));
   scene=new THREE.Scene();
   camera=new THREE.PerspectiveCamera(FOV,1,0.1,200);
-  // 怪しい雰囲気：真上からのスポットライト＋弱い環境光
-  scene.add(new THREE.AmbientLight(0x5a6472,0.22));
-  const spot=new THREE.SpotLight(0xfff1d4,2.6,70,Math.PI/5.2,0.55,1.1);
-  spot.position.set(0,20,1.6);spot.target.position.set(0,0,1.6);scene.add(spot);scene.add(spot.target);
-  const fill=new THREE.DirectionalLight(0x8aa0c0,0.14);fill.position.set(-4,6,-6);scene.add(fill);
+  // 怪しい雰囲気：ほぼ真上のスポットライト＋柄を照らす前方フィル
+  scene.add(new THREE.AmbientLight(0x6a7488,0.42));
+  const spot=new THREE.SpotLight(0xfff1d4,2.0,80,Math.PI/4.4,0.6,1.0);
+  spot.position.set(0,18,7);spot.target.position.set(0,0,2.4);scene.add(spot);scene.add(spot.target);
+  const fill=new THREE.DirectionalLight(0xfff0dc,0.42);fill.position.set(0,6,14);scene.add(fill);
+  const fill2=new THREE.DirectionalLight(0x8aa0c0,0.14);fill2.position.set(-5,5,-6);scene.add(fill2);
   // felt
   const felt=new THREE.Mesh(new THREE.PlaneGeometry(60,60),
     new THREE.MeshStandardMaterial({color:0x2a2c2e,roughness:0.98}));
@@ -631,8 +632,8 @@ function buildWalls(){
 function makeTile(i,win){
   const outer=new THREE.Group();let mesh;
   if(fbxReady&&tileGeoms[i]){
-    const mat=new THREE.MeshPhysicalMaterial({map:atlasTex,roughness:0.28,metalness:0.0,
-      clearcoat:0.8,clearcoatRoughness:0.16});
+    const mat=new THREE.MeshPhysicalMaterial({map:atlasTex,roughness:0.44,metalness:0.0,
+      clearcoat:0.35,clearcoatRoughness:0.34});
     if(win){mat.emissive=new THREE.Color(0x4a3a12);mat.emissiveIntensity=0.55;}
     mesh=new THREE.Mesh(tileGeoms[i],mat);
   }else{

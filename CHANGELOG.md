@@ -112,6 +112,11 @@
 - 背景の積み牌（walls）の緑面を象牙色に変更（wallMats の index2/5 を緑→ivory）
 - ライティングを「真上スポットライト＋暗め」に：AmbientLight 0.78→0.22(寒色)、Directional×2を撤去し SpotLight(真上 y20, angle≈π/5.2, penumbra0.55) + 弱いフィルライトに。怪しい雰囲気
 
+## 2026-06-17 Claude（艶・ライティング微調整）
+- 艶が強すぎて柄が飛ぶ問題 → clearcoat 0.8→0.35、clearcoatRoughness 0.16→0.34、roughness 0.28→0.44
+- スポットライトで柄面が真っ黒問題 → 牌の正面（縦の柄面）に光が当たるよう調整
+  - AmbientLight 0.22→0.42、SpotLightを少し前傾(pos y18 z7→target z2.4)、前方フィル(0xfff0dc,0.42, z14)を追加。怪しい雰囲気は維持
+
 ---
 
 ## 引き継ぎ時の注意
