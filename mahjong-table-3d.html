@@ -547,7 +547,7 @@ function buildAtlasNormal(cb){
 }
 // FBXメッシュindex（traversal順）→ アプリ牌index(0..33: 萬1-9,筒1-9,索1-9,東南西北白發中)
 const FBX_POS_ORDER=[33,13,26,5,29,24,20,8,1, 18,7,32,30,2,31,15,21,17, 23,22,19,6,11,10,12,27,0, 28,3,14,16,9,4,25];
-const TEX_CHAR_SCALE=1.14; // >1で文字を小さく（面に余白）。1.0で等倍
+const TEX_CHAR_SCALE=1.0; // >1で文字を小さく（面に余白）。1.0で等倍（=無効）
 // 各牌のUVを面の中心から拡縮して文字サイズを調整
 function scaleFaceUV(g,s){const uv=g.attributes.uv;if(!uv||s===1)return;
   let minU=1e9,maxU=-1e9,minV=1e9,maxV=-1e9;
