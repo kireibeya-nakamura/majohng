@@ -51,6 +51,15 @@
     padding:8px max(12px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
     background:linear-gradient(0deg,rgba(20,22,24,.95),rgba(20,22,24,.6) 64%,transparent);}
   #ctrlrow{display:flex;justify-content:center;gap:8px;}
+  #callrow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;max-width:96vw;}
+  .cbtn{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);
+    border-radius:9px;padding:6px 11px;font-size:.78rem;font-weight:600;}
+  .cbtn.armed{background:linear-gradient(180deg,#e2705a,#c8442e);color:#fff;border-color:#a3331f;}
+  #calls{display:inline-flex;flex-wrap:wrap;gap:5px;}
+  #calls .chip{border:1px solid rgba(230,200,120,.4);background:rgba(230,200,120,.14);color:var(--gold);
+    border-radius:8px;padding:5px 9px;font-size:.76rem;font-weight:700;}
+  #calls .chip small{color:var(--muted);font-weight:500;margin-left:4px;}
+  #callhint{font-size:.74rem;color:#ff9a86;font-weight:600;min-height:1em;}
   #palrow{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;}
   .tabs{display:flex;flex-direction:column;gap:4px;}
   .tabs button{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);
@@ -176,7 +185,7 @@
       <div id="status"></div>
     </div>
 
-    <div id="cntpill"><b id="cnt">0</b>/14<span id="wlab"></span></div>
+    <div id="cntpill"><b id="cnt">0</b>/<b id="cntneed">14</b><span id="wlab"></span></div>
     <div id="scrollcue">▼ メニュー</div>
 
     <div id="palbar">
@@ -187,6 +196,14 @@
         </div>
         <div class="pal" id="pal"></div>
         <button class="calc" id="calc" disabled>計算開始</button>
+      </div>
+      <div id="callrow">
+        <button class="cbtn" data-c="pon">ポン</button>
+        <button class="cbtn" data-c="chi">チー</button>
+        <button class="cbtn" data-c="minkan">明カン</button>
+        <button class="cbtn" data-c="ankan">暗カン</button>
+        <span id="calls"></span>
+        <span id="callhint"></span>
       </div>
       <div id="ctrlrow">
         <button class="ic" id="undo">戻す</button>
@@ -498,6 +515,7 @@ function palImg(i){if(palCache[i])return palCache[i];const c=faceCanvas(i,108,15
 /* ============ state ============ */
 const S={dealer:false,tsumo:false,riichi:false,dbl:false,roundWind:27,seatWind:28,dora:0,haitei:false,houtei:false,ippatsu:false,rinshan:false,chankan:false};
 let hand=[],winPos=0,lastResult=null,lastValid=false,soundOn=true,actx=null;
+let calls=[],callMode=null;   // 鳴き・カン（副露）と入力モード
 const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
 let sortedHand=[],winTile=null;
 function buildCtx(){return {winTile,tsumo:S.tsumo,dealer:S.dealer,roundWind:S.roundWind,seatWind:S.seatWind,dora:S.dora,
@@ -852,8 +870,8 @@ function drawResultTexture(r,kYaku,scoreVal){
     if(r.rank){g.font=`700 ${H*0.07}px "Hiragino Mincho ProN","Yu Mincho",serif`;g.fillStyle='#e6c878';
       g.shadowColor='rgba(0,0,0,.5)';g.shadowBlur=H*0.012;g.fillText(r.rank,cx,H*0.70);g.shadowBlur=0;} // 点数と重ならないよう上へ
     const sTxt=Math.round(scoreVal).toLocaleString()+'点';
-    g.font=`800 ${H*0.15}px "Hiragino Kaku Gothic ProN",sans-serif`;g.fillStyle='#ecd183';
-    g.shadowColor='rgba(0,0,0,.55)';g.shadowBlur=H*0.022;g.shadowOffsetY=H*0.005;g.fillText(sTxt,cx,H*0.96);g.shadowBlur=0;g.shadowOffsetY=0;
+    g.font=`800 ${H*0.27}px "Hiragino Kaku Gothic ProN",sans-serif`;g.fillStyle='#ecd183'; // 大きめ（バランス確認用）
+    g.shadowColor='rgba(0,0,0,.55)';g.shadowBlur=H*0.022;g.shadowOffsetY=H*0.005;g.fillText(sTxt,cx,H*0.97);g.shadowBlur=0;g.shadowOffsetY=0;
   }
   resultTex.needsUpdate=true;
 }
@@ -1070,6 +1088,8 @@ function render(){
   winTile=sortedHand.length?sortedHand[winPos]:null;
   buildHand();
   document.getElementById('cnt').textContent=hand.length;
+  document.getElementById('cntneed').textContent=needConc();
+  renderCalls();
   const names=['一','二','三','四','五','六','七','八','九'];
   let wl='';if(winTile!=null){const suit=winTile<27?Math.floor(winTile/9):3,n=winTile%9;
     wl='あがり牌：'+(winTile<27?names[n]+['萬','筒','索'][suit]:['東','南','西','北','白','發','中'][winTile-27]);}
@@ -1079,9 +1099,10 @@ function render(){
 function compute(){
   hideResult();
   const calc=document.getElementById('calc'),st=document.getElementById('status');
-  if(hand.length<14){lastValid=false;lastResult=null;calc.disabled=true;calc.classList.remove('ready');
-    st.textContent=hand.length===0?'牌を並べてください':'あと '+(14-hand.length)+' 枚';return;}
-  const r=calcHand(hand,[],buildCtx());
+  const need=needConc();
+  if(hand.length<need){lastValid=false;lastResult=null;calc.disabled=true;calc.classList.remove('ready');
+    st.textContent=hand.length===0&&!calls.length?'牌を並べてください':'あと '+(need-hand.length)+' 枚';return;}
+  const r=calcHand(hand,calls,buildCtx());
   if(r.error){lastValid=false;lastResult=null;calc.disabled=true;calc.classList.remove('ready');
     st.textContent=r.error;return;}
   lastResult=r;lastValid=true;calc.disabled=false;calc.classList.add('ready');
@@ -1093,17 +1114,57 @@ function buildPalette(suit){
   const pal=document.getElementById('pal');pal.innerHTML='';pal.classList.toggle('honors',suit===3);
   const list=suit<3?[0,1,2,3,4,5,6,7,8].map(n=>suit*9+n):[27,28,29,30,31,32,33];
   list.forEach(i=>{const b=document.createElement('button');const im=new Image();im.src=palImg(i);im.alt='';b.appendChild(im);
-    b.onclick=()=>addTile(i);pal.appendChild(b);});
+    b.onclick=()=>paletteTap(i);pal.appendChild(b);});
 }
-function addTile(i){if(hand.length>=14)return;ensureCtx();hand.push(i);winPos=hand.slice().sort((a,b)=>a-b).indexOf(i);
+/* ---- 鳴き・カン（副露） ---- */
+function needConc(){return 14-3*calls.length;}                 // 必要な手牌（伏せ）枚数
+function paletteTap(i){ if(callMode) addCall(i); else addTile(i); }
+function tileName(i){const names=['一','二','三','四','五','六','七','八','九'];
+  return i<27?names[i%9]+['萬','筒','索'][Math.floor(i/9)]:['東','南','西','北','白','發','中'][i-27];}
+function armCall(type){
+  callMode=(callMode===type)?null:type;
+  document.querySelectorAll('#callrow .cbtn').forEach(b=>b.classList.toggle('armed',b.dataset.c===callMode));
+  const names={pon:'ポン',chi:'チー',minkan:'明カン',ankan:'暗カン'};
+  document.getElementById('callhint').textContent=callMode?(names[callMode]+'にする牌を下からタップ'):'';
+}
+function addCall(i){
+  if(calls.length>=4){armCall(callMode);return;}
+  let c;
+  if(callMode==='pon')c={type:'kou',t:i,open:true,kan:false};
+  else if(callMode==='minkan')c={type:'kou',t:i,open:true,kan:true};
+  else if(callMode==='ankan')c={type:'kou',t:i,open:false,kan:true};
+  else if(callMode==='chi'){if(i>=27||i%9>6){document.getElementById('callhint').textContent='チーは数牌の1〜7（順子の先頭）をタップ';return;}
+    c={type:'shun',t:i,open:true,kan:false};}
+  if(!c)return;
+  ensureCtx();calls.push(c);callMode=null;
+  document.querySelectorAll('#callrow .cbtn').forEach(b=>b.classList.remove('armed'));
+  document.getElementById('callhint').textContent='';
+  while(hand.length>needConc())hand.pop();          // 鳴きで手牌上限が減るので調整
+  clack();render();
+}
+function renderCalls(){
+  const box=document.getElementById('calls');if(!box)return;box.innerHTML='';
+  calls.forEach((c,idx)=>{const chip=document.createElement('span');chip.className='chip';
+    const kind=c.type==='shun'?'チー':(c.kan?(c.open?'明カン':'暗カン'):'ポン');
+    const face=c.type==='shun'?(tileName(c.t)+tileName(c.t+1)+tileName(c.t+2)):tileName(c.t);
+    chip.innerHTML=face+'<small>'+kind+' ×</small>';
+    chip.title='タップで削除';chip.onclick=()=>{calls.splice(idx,1);render();};
+    box.appendChild(chip);});
+}
+function addTile(i){if(hand.length>=needConc())return;if(hand.filter(x=>x===i).length>=4)return;
+  ensureCtx();hand.push(i);
   // 末尾に入れた牌をあがり牌に（同種は最後の位置）
   const sorted=hand.slice().sort((a,b)=>a-b);let idx=-1;for(let k=0;k<sorted.length;k++)if(sorted[k]===i)idx=k;winPos=idx;
   clack();render();}
 function bindSeg(id,fn){const box=document.getElementById(id);box.querySelectorAll('button').forEach(b=>{b.onclick=()=>{
   box.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');fn(b.dataset.v);render();};});}
 
-document.getElementById('undo').onclick=()=>{hand.pop();render();};
-document.getElementById('clear').onclick=()=>{hand=[];winPos=0;render();};
+document.querySelectorAll('#callrow .cbtn').forEach(b=>b.onclick=()=>armCall(b.dataset.c));
+document.getElementById('undo').onclick=()=>{if(callMode){armCall(callMode);return;}
+  if(hand.length)hand.pop();else if(calls.length)calls.pop();render();};
+document.getElementById('clear').onclick=()=>{hand=[];calls=[];callMode=null;winPos=0;
+  document.querySelectorAll('#callrow .cbtn').forEach(b=>b.classList.remove('armed'));
+  document.getElementById('callhint').textContent='';render();};
 document.getElementById('calc').onclick=()=>{if(lastValid&&lastResult){ensureCtx();fallAndReveal(lastResult);}};
 document.getElementById('rp-again').onclick=()=>{if(!lastResult)return;userZoom=1;scrollToTable();
   setTimeout(()=>{if(resultPlane)resultPlane.visible=false;buildHand();setTimeout(()=>fallAndReveal(lastResult),150);},reduce?0:520);};

@@ -5,6 +5,16 @@
 
 ---
 
+## 2026-06-17 Claude（鳴き・カンUI追加／点数表示を拡大）
+- 牌選択タブの下に「鳴き」バー(#callrow)を追加：ポン/チー/明カン/暗カン。前プロト(mahjong-hand-calc.html)の操作を移植
+  - スコアエンジンは元から calls 対応。compute() で calcHand(hand, calls, ctx) を呼ぶよう変更
+  - 操作：ボタンをタップ→armed→パレットの牌をタップで確定。チーは数牌1〜7（順子の先頭）。calls形式 {type:'shun'|'kou',t,open,kan}
+  - 必要手牌枚数 needConc()=14-3*calls.length。cntpill を「現在/需要(cntneed)」表示に。addTile は needConc 上限＆同種4枚ガード
+  - 宣言した鳴きはチップ表示(#calls)。タップで削除。undo は armed解除→手牌pop→callspop の順。clear で全リセット
+  - paletteTap() で callMode 中はaddCall、通常はaddTile に振り分け
+  - ※未対応/今後調整：3D卓には鳴き牌を未表示（伏せ手牌のみ落下）。明カン/暗カンの面子表現・ターツ位置は要相談（ユーザーと一緒に調整予定）
+- 点数表示を拡大（満貫等のランクとの隙間調整）：font H*0.15→0.27・y0.96→0.97（※まず大きめ。要バランス調整）
+
 ## 2026-06-17 Claude（点棒を上げて右へ／スクロール先に全設定を統合）
 - 点棒が下すぎて見切れる問題：cx 2.6→3.3, cz 3.9→3.0（上げて右へ）。アガリ牌(x≈1.9)とは x 方向で分離し非接触
 - スクロール先(resultpanel #rp-settings)に前プロト相当の全設定を統合：
