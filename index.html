@@ -1010,12 +1010,12 @@ function clearTenbo(){if(!scene)return;
 function throwTenbo(total,instant){
   if(!THREE_OK||!scene)return;clearTenbo();
   const list=tenboBreakdown(total);if(!list.length)return;
-  // 倒れた牌より手前（+z）の空きスペースへ、バラけて着地（自然な山）
-  const cz=3.5;
+  // 倒れた牌に被らない右下（+x=右, +z=手前）の空きスペースへ着地。散らばりは控えめ。
+  const cx=1.9,cz=3.6;
   list.forEach((denom,k)=>{
     const mesh=makeTenbo(denom);
-    // 散らばった着地点・向き（規則正しく並ばないように）
-    const tx=rndJ(1.3), tz=cz+rndJ(0.6), yaw=rndJ(Math.PI*0.8);
+    // やや散らした着地点・向き（控えめ。きれいに並びすぎない程度）
+    const tx=cx+rndJ(0.45), tz=cz+rndJ(0.4), yaw=rndJ(Math.PI*0.45);
     const ty=TENBO.H*0.5+0.02;
     if(instant){mesh.position.set(tx,ty,tz);mesh.rotation.set(0,yaw,0);scene.add(mesh);tenbos.push(mesh);return;}
     // 画面手前外（+z＝画面下）のすぐ外から放物線で飛び込む
