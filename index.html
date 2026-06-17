@@ -638,18 +638,18 @@ function initScene(){
   renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
   renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
   if(THREE.sRGBEncoding!==undefined)renderer.outputEncoding=THREE.sRGBEncoding;
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=0.92;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   host.insertBefore(renderer.domElement,document.getElementById('vig'));
   scene=new THREE.Scene();
   camera=new THREE.PerspectiveCamera(FOV,1,0.1,200);
   // 怪しい雰囲気：ほぼ真上のスポットライト（影付き）＋柄を照らす弱い前方フィル
   scene.add(new THREE.AmbientLight(0x5a6478,0.28));
-  const spot=new THREE.SpotLight(0xfff1d4,2.7,90,Math.PI/4.6,0.55,1.0);
-  spot.position.set(0,19,6);spot.target.position.set(0,0,2.2);scene.add(spot);scene.add(spot.target);
+  const spot=new THREE.SpotLight(0xfff1d4,2.1,90,Math.PI/4.6,0.6,1.0);
+  spot.position.set(0,18,-5);spot.target.position.set(0,0,1.4);scene.add(spot);scene.add(spot.target); // 卓の奥寄りから照らす（手前のテカリを抑える）
   spot.castShadow=true;spot.shadow.mapSize.set(2048,2048);
   spot.shadow.camera.near=4;spot.shadow.camera.far=60;spot.shadow.bias=-0.0004;spot.shadow.radius=4;
-  const fill=new THREE.DirectionalLight(0xffeccf,0.32);fill.position.set(0,6,14);scene.add(fill);
+  const fill=new THREE.DirectionalLight(0xffeccf,0.22);fill.position.set(0,7,9);scene.add(fill);
   const fill2=new THREE.DirectionalLight(0x7e94b8,0.1);fill2.position.set(-5,5,-6);scene.add(fill2);
   // felt（ベロア／ベルベット質感）
   const ft=makeFeltTextures();
@@ -695,8 +695,8 @@ function buildWalls(){
 function makeTile(i,win){
   const outer=new THREE.Group();let mesh;
   if(fbxReady&&tileGeoms[i]){
-    const mat=new THREE.MeshPhysicalMaterial({map:atlasTex,roughness:0.44,metalness:0.0,
-      clearcoat:0.35,clearcoatRoughness:0.34});
+    const mat=new THREE.MeshPhysicalMaterial({map:atlasTex,roughness:0.58,metalness:0.0,
+      clearcoat:0.15,clearcoatRoughness:0.5}); // テカリ（スペキュラ）を抑えて白飛び防止
     if(atlasNormal){mat.normalMap=atlasNormal;mat.normalScale=new THREE.Vector2(-1.4,-1.4);}
     if(win){mat.emissive=new THREE.Color(0x4a3a12);mat.emissiveIntensity=0.55;}
     mesh=new THREE.Mesh(tileGeoms[i],mat);
@@ -955,12 +955,48 @@ function tenboTexture(denom){
   return tenboTexCache[denom]=t;
 }
 function makeTenbo(denom){
+  // FBXモデルがあればそれを使う（テクスチャは牌と同じ Mahjong.png）
+  if(tenboGeoms&&tenboGeoms[denom]){
+    const mat=new THREE.MeshStandardMaterial({map:atlasTex,roughness:0.5,metalness:0.0});
+    const mesh=new THREE.Mesh(tenboGeoms[denom],mat);
+    mesh.castShadow=true;mesh.receiveShadow=true;return mesh;
+  }
+  // フォールバック：手作りの箱＋点テクスチャ
   const geo=new THREE.BoxGeometry(TENBO.L,TENBO.H,TENBO.W);
   const body=new THREE.MeshStandardMaterial({color:0xeee4cd,roughness:0.55,metalness:0.0});
   const top=new THREE.MeshStandardMaterial({map:tenboTexture(denom),roughness:0.5,metalness:0.0});
   // BoxGeometryの面順 [+x,-x,+y,-y,+z,-z]：上面(+y, index2)だけ点パターン
   const mesh=new THREE.Mesh(geo,[body,body,top,body,body,body]);
+  mesh.userData.ownGeo=true;
   mesh.castShadow=true;mesh.receiveShadow=true;return mesh;
+}
+// 点棒FBX（assets/Mahjong_Tenbow.fbx）の各額面を読み込み TENBO 寸法へ正規化
+let tenboGeoms=null;
+function loadTenboFBX(cb){
+  if(!THREE||!THREE.FBXLoader){cb&&cb(false);return;}
+  new THREE.FBXLoader().load('assets/Mahjong_Tenbow.fbx',obj=>{
+    try{
+      obj.updateWorldMatrix(true,true);
+      const byName={};obj.traverse(c=>{if(c.isMesh)byName[c.name]=c;});
+      const map={100:'TenBow_100',1000:'TenBow_1000',5000:'TenBow_5000',10000:'TenBow_10000'};
+      const out={};
+      Object.keys(map).forEach(d=>{
+        const m=byName[map[d]];if(!m||!m.geometry)return;
+        const g=m.geometry.clone();g.applyMatrix4(m.matrixWorld);
+        g.computeBoundingBox();const ctr=new THREE.Vector3();g.boundingBox.getCenter(ctr);g.translate(-ctr.x,-ctr.y,-ctr.z);
+        let sz=new THREE.Vector3();g.computeBoundingBox();g.boundingBox.getSize(sz);
+        // 一番薄い軸を厚み(y)へ：印字面の法線＝薄い軸なので、印字面が上(+y)になる
+        if(sz.x<=sz.y&&sz.x<=sz.z){g.rotateZ(Math.PI/2);}        // 薄い軸がx → y へ
+        else if(sz.z<=sz.x&&sz.z<=sz.y){g.rotateX(Math.PI/2);}   // 薄い軸がz → y へ
+        g.computeBoundingBox();g.boundingBox.getSize(sz);
+        if(sz.z>sz.x){g.rotateY(Math.PI/2);g.computeBoundingBox();g.boundingBox.getSize(sz);} // 長辺を x へ
+        g.scale(TENBO.L/sz.x,TENBO.H/sz.y,TENBO.W/sz.z);g.computeVertexNormals();
+        out[d]=g;
+      });
+      tenboGeoms=Object.keys(out).length?out:null;
+      cb&&cb(!!tenboGeoms);
+    }catch(e){console.warn('tenbo fbx build failed',e);cb&&cb(false);}
+  },undefined,err=>{console.warn('tenbo fbx load error',err);cb&&cb(false);});
 }
 // 点数を 10000/5000/1000/100 の点棒へ分解（安全のため枚数上限）
 function tenboBreakdown(total){
@@ -969,26 +1005,39 @@ function tenboBreakdown(total){
   return out.slice(0,14);
 }
 function clearTenbo(){if(!scene)return;
-  tenbos.forEach(m=>{scene.remove(m);if(m.geometry)m.geometry.dispose();});tenbos=[];}
+  // FBXジオメトリは共有なので破棄しない。手作り箱(ownGeo)のみ破棄。
+  tenbos.forEach(m=>{scene.remove(m);if(m.userData&&m.userData.ownGeo&&m.geometry)m.geometry.dispose();});tenbos=[];}
 function throwTenbo(total,instant){
   if(!THREE_OK||!scene)return;clearTenbo();
   const list=tenboBreakdown(total);if(!list.length)return;
-  // 倒れた牌より手前（+z）・中央に着地。牌(高さ~0.36)に隠れない手前の空きスペース。
-  const N=list.length,s=TENBO.W*1.4,cx=0,cz=3.5;
+  // 倒れた牌より手前（+z）の空きスペースへ、バラけて着地（自然な山）
+  const cz=3.5;
   list.forEach((denom,k)=>{
     const mesh=makeTenbo(denom);
-    const tx=cx+rndJ(0.06), tz=cz+(k-(N-1)/2)*s+rndJ(0.02), ty=TENBO.H*0.5+0.02+(k%2)*0.004, yaw=rndJ(0.06);
+    // 散らばった着地点・向き（規則正しく並ばないように）
+    const tx=rndJ(1.3), tz=cz+rndJ(0.6), yaw=rndJ(Math.PI*0.8);
+    const ty=TENBO.H*0.5+0.02;
     if(instant){mesh.position.set(tx,ty,tz);mesh.rotation.set(0,yaw,0);scene.add(mesh);tenbos.push(mesh);return;}
-    // 画面手前外（+z＝画面下）のすぐ外からスタートし、放物線で画面内へ
-    const sx=tx+rndJ(0.5), sz=5.6+rndJ(0.4), sy=2.1+rndJ(0.3);
+    // 画面手前外（+z＝画面下）のすぐ外から放物線で飛び込む
+    const sx=tx+rndJ(0.6), sz=5.8+rndJ(0.4), sy=2.1+rndJ(0.3);
     mesh.position.set(sx,sy,sz);
-    const spin0=(Math.random()*2-1)*Math.PI*1.4, tilt0=(Math.random()*2-1)*0.9;
+    const dx=tx-sx,dz=tz-sz,dl=Math.hypot(dx,dz)||1,ndx=dx/dl,ndz=dz/dl; // 進行方向（着地後の転がり用）
+    const spin0=(Math.random()*2-1)*Math.PI*1.5, tilt0=(Math.random()*2-1)*0.9;
+    const rollExtra=(Math.random()*2-1)*0.6, slide=0.10+Math.random()*0.16; // 着地後の追加回転と滑り
     scene.add(mesh);tenbos.push(mesh);
     tween(540,k*100,(e,p)=>{
       mesh.position.x=sx+(tx-sx)*e;mesh.position.z=sz+(tz-sz)*e;
       mesh.position.y=sy+(ty-sy)*e+Math.sin(Math.PI*p)*0.9; // 放物線
       mesh.rotation.y=yaw+spin0*(1-e);mesh.rotation.x=tilt0*(1-e);
-    },()=>{mesh.position.set(tx,ty,tz);mesh.rotation.set(0,yaw,0);clack();});
+    },()=>{
+      clack();
+      // 着地後に少し転がって止まる：進行方向へ滑りつつ小バウンド＋回転して減速
+      tween(280,0,(e,p)=>{
+        mesh.position.x=tx+ndx*slide*e;mesh.position.z=tz+ndz*slide*e;
+        mesh.position.y=ty+Math.sin(Math.PI*p)*0.05*(1-p);
+        mesh.rotation.y=yaw+rollExtra*e;mesh.rotation.x=0;
+      },()=>{mesh.position.set(tx+ndx*slide,ty,tz+ndz*slide);mesh.rotation.set(0,yaw+rollExtra,0);});
+    });
   });
 }
 
@@ -1078,7 +1127,7 @@ loadThree(ok=>{
   if(!ok||!window.THREE){THREE_OK=false;document.getElementById('threefail').style.display='flex';st.textContent='';return;}
   try{THREE_OK=true;initScene();st.textContent='牌を並べてください';render();
     if(DOF_ON)loadPost(ok2=>{if(!ok2)return;try{initComposer();usePost=true;}catch(e){console.warn('DoF init failed',e);usePost=false;}});
-    if(USE_FBX)loadFBXTiles(ok3=>{if(ok3)render();});}
+    if(USE_FBX)loadFBXTiles(ok3=>{if(ok3){loadTenboFBX(()=>{});render();}});}
   catch(e){console.warn(e);THREE_OK=false;document.getElementById('threefail').style.display='flex';st.textContent='';}
 });
 </script>
