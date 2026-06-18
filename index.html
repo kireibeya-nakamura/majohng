@@ -189,13 +189,11 @@
     <div id="scrollcue">▼ メニュー</div>
 
     <div id="palbar">
-      <div id="palrow">
-        <div class="tabs" id="tabs">
-          <button data-s="0" class="on">萬</button><button data-s="1">筒</button>
-          <button data-s="2">索</button><button data-s="3">字</button>
-        </div>
-        <div class="pal" id="pal"></div>
-        <button class="calc" id="calc" disabled>計算開始</button>
+      <div id="ctrlrow">
+        <button class="ic" id="undo">戻す</button>
+        <button class="ic" id="clear">クリア</button>
+        <button class="ic on" id="snd">効果音</button>
+        <button class="ic" id="gear">設定</button>
       </div>
       <div id="callrow">
         <button class="cbtn" data-c="pon">ポン</button>
@@ -205,11 +203,13 @@
         <span id="calls"></span>
         <span id="callhint"></span>
       </div>
-      <div id="ctrlrow">
-        <button class="ic" id="undo">戻す</button>
-        <button class="ic" id="clear">クリア</button>
-        <button class="ic on" id="snd">効果音</button>
-        <button class="ic" id="gear">設定</button>
+      <div id="palrow">
+        <div class="tabs" id="tabs">
+          <button data-s="0" class="on">萬</button><button data-s="1">筒</button>
+          <button data-s="2">索</button><button data-s="3">字</button>
+        </div>
+        <div class="pal" id="pal"></div>
+        <button class="calc" id="calc" disabled>計算開始</button>
       </div>
     </div>
 
@@ -510,7 +510,39 @@ function faceCanvas(i,w,h,gold){const c=document.createElement('canvas');c.width
     g.lineWidth=w*0.06;g.strokeStyle='#ecc863';path();g.stroke();}
   return c;}
 const palCache={};
-function palImg(i){if(palCache[i])return palCache[i];const c=faceCanvas(i,108,150,false);return palCache[i]=c.toDataURL();}
+// 3D牌と同じ絵柄をボタンにする：FBX牌の「面のUV矩形」を取り、Mahjong.png から切り出す
+let atlasImg=null;
+function loadAtlasImg(cb){if(atlasImg)return cb&&cb(atlasImg);
+  const im=new Image();im.crossOrigin='anonymous';
+  im.onload=()=>{atlasImg=im;cb&&cb(im);};im.onerror=()=>cb&&cb(null);im.src='assets/Mahjong.png';}
+const _uvRect={};
+function tileFaceUVRect(i){
+  if(_uvRect[i]!==undefined)return _uvRect[i];
+  const g=(typeof tileGeoms!=='undefined')&&tileGeoms&&tileGeoms[i];
+  if(!g||!g.attributes||!g.attributes.uv||!g.attributes.normal)return _uvRect[i]=null;
+  const uv=g.attributes.uv,nm=g.attributes.normal,index=g.index,cnt=index?index.count:uv.count;
+  let minU=1e9,maxU=-1e9,minV=1e9,maxV=-1e9,found=false;
+  for(let k=0;k<cnt;k++){const vi=index?index.getX(k):k;
+    if(nm.getZ(vi)>0.6){const u=uv.getX(vi),v=uv.getY(vi);   // 面は+z向き（牌を立てる処理後）
+      if(u<minU)minU=u;if(u>maxU)maxU=u;if(v<minV)minV=v;if(v>maxV)maxV=v;found=true;}}
+  return _uvRect[i]=found?{minU,maxU,minV,maxV}:null;
+}
+function palImg(i){
+  if(palCache[i])return palCache[i];
+  const r=atlasImg?tileFaceUVRect(i):null;
+  if(r){
+    const W=atlasImg.naturalWidth||atlasImg.width,H=atlasImg.naturalHeight||atlasImg.height;
+    const sx=r.minU*W,sw=Math.max(1,(r.maxU-r.minU)*W);
+    const sy=(1-r.maxV)*H,sh=Math.max(1,(r.maxV-r.minV)*H); // atlasTexはflipY=true→画像y=(1-v)*H
+    const cw=108,ch=Math.max(40,Math.round(cw*sh/sw));
+    const c=document.createElement('canvas');c.width=cw;c.height=ch;const g=c.getContext('2d');
+    g.fillStyle='#efe7d2';g.fillRect(0,0,cw,ch);          // 象牙の地（万一の透明対策）
+    g.drawImage(atlasImg,sx,sy,sw,sh,0,0,cw,ch);
+    return palCache[i]=c.toDataURL();
+  }
+  const c=faceCanvas(i,108,150,false);return palCache[i]=c.toDataURL(); // フォールバック（FBX/アトラス未読込時）
+}
+function refreshPalette(){for(const k in palCache)delete palCache[k];if(typeof curSuit!=='undefined')buildPalette(curSuit);}
 
 /* ============ state ============ */
 const S={dealer:false,tsumo:false,riichi:false,dbl:false,roundWind:27,seatWind:28,dora:0,haitei:false,houtei:false,ippatsu:false,rinshan:false,chankan:false};
@@ -1187,7 +1219,9 @@ function compute(){
 }
 
 /* ============ UI wiring ============ */
+let curSuit=0;
 function buildPalette(suit){
+  curSuit=suit;
   const pal=document.getElementById('pal');pal.innerHTML='';pal.classList.toggle('honors',suit===3);
   const list=suit<3?[0,1,2,3,4,5,6,7,8].map(n=>suit*9+n):[27,28,29,30,31,32,33];
   list.forEach(i=>{const b=document.createElement('button');const im=new Image();im.src=palImg(i);im.alt='';b.appendChild(im);
@@ -1297,7 +1331,9 @@ loadThree(ok=>{
   if(!ok||!window.THREE){THREE_OK=false;document.getElementById('threefail').style.display='flex';st.textContent='';return;}
   try{THREE_OK=true;initScene();st.textContent='牌を並べてください';render();
     if(DOF_ON)loadPost(ok2=>{if(!ok2)return;try{initComposer();usePost=true;}catch(e){console.warn('DoF init failed',e);usePost=false;}});
-    if(USE_FBX)loadFBXTiles(ok3=>{if(ok3){loadTenboFBX(()=>{});render();}});}
+    if(USE_FBX)loadFBXTiles(ok3=>{if(ok3){loadTenboFBX(()=>{});
+      loadAtlasImg(()=>refreshPalette()); // パレットボタンを3D牌と同じ絵柄に作り直す
+      render();}});}
   catch(e){console.warn(e);THREE_OK=false;document.getElementById('threefail').style.display='flex';st.textContent='';}
 });
 </script>
