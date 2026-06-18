@@ -635,7 +635,7 @@ function initComposer(){
   const host=document.getElementById('stage'),w=host.clientWidth,h=host.clientHeight;
   composer=new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene,camera));
-  bokehPass=new THREE.BokehPass(scene,camera,{focus:11,aperture:0.03,maxblur:0.015,width:w,height:h});
+  bokehPass=new THREE.BokehPass(scene,camera,{focus:11,aperture:0.046,maxblur:0.022,width:w,height:h}); // 手牌にピント・奥(河/山牌)を強めにぼかす
   composer.addPass(bokehPass);
   composer.setSize(w,h);
 }
@@ -701,12 +701,12 @@ function initScene(){
   catch(e){console.warn('env map failed',e);}
   // ライティング：真上やや奥のスポット＋暖色オレンジのピンライト＋柄を起こす前方フィル
   scene.add(new THREE.AmbientLight(0x5a6478,0.26));
-  const spot=new THREE.SpotLight(0xfff1d4,2.0,90,Math.PI/4.6,0.6,1.0);
-  spot.position.set(0,18,-5);spot.target.position.set(0,0,1.4);scene.add(spot);scene.add(spot.target); // 卓の奥寄りから照らす
+  const spot=new THREE.SpotLight(0xfff1d4,2.45,90,Math.PI/4.6,0.6,1.0);
+  spot.position.set(0,18,-5);spot.target.position.set(0,0,1.4);scene.add(spot);scene.add(spot.target); // 卓の奥寄りから照らす（少し強め）
   spot.castShadow=true;spot.shadow.mapSize.set(2048,2048);
   spot.shadow.camera.near=4;spot.shadow.camera.far=60;spot.shadow.bias=-0.0004;spot.shadow.radius=4;
   // オレンジのピンライト（卓に暖色の溜まりを作る）
-  const pin=new THREE.SpotLight(0xff8a38,1.8,42,Math.PI/7.5,0.78,1.2);
+  const pin=new THREE.SpotLight(0xff8a38,2.3,42,Math.PI/7.5,0.78,1.2);
   pin.position.set(-5.5,9,5.5);pin.target.position.set(-0.6,0,1.9);scene.add(pin);scene.add(pin.target);
   // 前方フィル（手牌選択時に柄＝牌の絵柄が暗くなりすぎないように、やや強め＆暖色）
   const fill=new THREE.DirectionalLight(0xffe9cf,0.34);fill.position.set(0,7,11);scene.add(fill);
@@ -979,7 +979,7 @@ function showResult(r,instant){
   const bd=document.getElementById('rp-bd'),btns=document.getElementById('rp-btns'),hint=document.getElementById('rp-hint');
   hint.style.display='none';btns.classList.remove('show');
   bd.textContent=r.bd+(r.yakuman?'':'　'+r.han+'翻 '+r.fu+'符');
-  if(instant){drawResultTexture(r,r.yaku.length,r.total);resultPlane.material.opacity=1;btns.classList.add('show');throwTenbo(r.total,true);return;}
+  if(instant){drawResultTexture(r,r.yaku.length,r.total);resultPlane.material.opacity=1;btns.classList.add('show');return;}
   drawResultTexture(r,0,0);resultPlane.material.opacity=0;
   tween(420,0,e=>resultPlane.material.opacity=e);
   const list=r.yaku,fu=r.fu,dealer=S.dealer,childCtx={dealer:false,tsumo:S.tsumo},step=r.yakuman?470:340,t0=320;
@@ -995,7 +995,7 @@ function showResult(r,instant){
   let end;const base=t0+list.length*step;
   if(dealer){setTimeout(()=>animScore(list.length,r.total,640),base+180);end=base+180+660;}else end=t0+(list.length-1)*step+300+120;
   setTimeout(()=>btns.classList.add('show'),end+180);
-  setTimeout(()=>throwTenbo(r.total,false),end+280);   // 役・点数表示の後に点棒を放り投げる
+  // 点棒アニメーションは無効化（ユーザー要望で削除）
 }
 function hideResult(){
   if(resultPlane){resultPlane.visible=false;resultPlane.material.opacity=0;}

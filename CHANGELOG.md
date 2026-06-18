@@ -5,6 +5,12 @@
 
 ---
 
+## 2026-06-18 Claude（点棒演出を無効化／卓の光を強化／DoFを手牌ピント・奥ぼかしに調整）
+- 点棒アニメーション無効化（ユーザー要望）：showResult の throwTenbo 呼び出し2か所を削除。関数群(throwTenbo等)は未使用で残置、clearTenboは無害
+- 卓の光を少し強化：メインスポット 2.0→2.45、オレンジのピンライト 1.8→2.3
+- DoF（背景ピンボケ）を強める：aperture 0.03→0.046、maxblur 0.015→0.022。focusは注視点（建てモードでは手牌付近）に追従済みなので、手前の手牌にピント・奥（河/山牌）が強めにボケる
+- 調整：ボケ過多なら aperture/maxblur を、明るすぎ/暗すぎなら spot/pin/exposure を再調整
+
 ## 2026-06-18 Claude（リアリティ向上：環境光・オレンジピンライト・山牌/河・ピンボケ・質感UP）
 - ※Codexアレンジ版を探したが git(main/リモート)・ディスク・OneDriveのどこにも見当たらず。ユーザー選択により現行版(3da946f)の上で実装
 - 環境マップ(IBL)追加：buildEnvTexture()で簡易グラデequirect→PMREMGenerator→scene.environment。象牙/点棒/卓に柔らかな映り込み（try-catchで保護）
