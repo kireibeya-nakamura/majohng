@@ -617,7 +617,7 @@ function loadFBXTiles(cb){
 }
 
 /* ---- DoF (BokehPass) postprocessing ---- */
-const DOF_ON=false; // DoF（ボケ）一旦オフ。trueで復活
+const DOF_ON=true; // DoF（背景ピンボケ）。focusは注視点距離に追従（loop内）
 let composer=null,bokehPass=null,usePost=false,curLook=null;
 function loadScriptSeq(urls,cb){let i=0;(function next(){if(i>=urls.length)return cb(true);
   const s=document.createElement('script');s.src=urls[i++];s.onload=next;s.onerror=()=>cb(false);document.head.appendChild(s);})();}
@@ -635,7 +635,7 @@ function initComposer(){
   const host=document.getElementById('stage'),w=host.clientWidth,h=host.clientHeight;
   composer=new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene,camera));
-  bokehPass=new THREE.BokehPass(scene,camera,{focus:11,aperture:0.032,maxblur:0.016,width:w,height:h});
+  bokehPass=new THREE.BokehPass(scene,camera,{focus:11,aperture:0.03,maxblur:0.015,width:w,height:h});
   composer.addPass(bokehPass);
   composer.setSize(w,h);
 }
@@ -659,7 +659,10 @@ function makeFeltTextures(){
   // ノーマルマップ：起毛の微細な凹凸
   const nc=document.createElement('canvas');nc.width=nc.height=N;const ng=nc.getContext('2d');
   const nimg=ng.createImageData(N,N),nd=nimg.data,hh=new Float32Array(N*N);
-  for(let i=0;i<hh.length;i++)hh[i]=Math.random();
+  // 2オクターブ：細かい起毛＋やや粗いムラ＝ベロアらしい陰影
+  const M=64,coarse=new Float32Array(M*M);for(let i=0;i<coarse.length;i++)coarse[i]=Math.random();
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const cx=Math.floor(x/N*M),cy=Math.floor(y/N*M);
+    hh[y*N+x]=Math.random()*0.68+coarse[cy*M+cx]*0.32;}
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x;
     const hl=hh[y*N+((x-1+N)%N)],hr=hh[y*N+((x+1)%N)],hu=hh[((y-1+N)%N)*N+x],hd=hh[((y+1)%N)*N+x];
     let nx=(hl-hr)*0.5,ny=(hu-hd)*0.5,nz=1;const len=Math.hypot(nx,ny,nz);nx/=len;ny/=len;nz/=len;
@@ -667,6 +670,19 @@ function makeFeltTextures(){
   ng.putImageData(nimg,0,0);
   const normal=new THREE.CanvasTexture(nc);normal.wrapS=normal.wrapT=THREE.RepeatWrapping;normal.repeat.set(9,9);normal.anisotropy=4;
   return {map,normal};
+}
+// 環境マップ用の簡易グラデーション（柔らかな映り込み＝象牙・点棒の質感UP）
+function buildEnvTexture(){
+  const c=document.createElement('canvas');c.width=16;c.height=128;const g=c.getContext('2d');
+  const grd=g.createLinearGradient(0,0,0,128);
+  grd.addColorStop(0.00,'#15181e');  // 天井（暗）
+  grd.addColorStop(0.42,'#2c2620');  // 暗い壁
+  grd.addColorStop(0.60,'#6e5230');  // ライト帯（暖色）
+  grd.addColorStop(0.66,'#8a6438');  // 暖色ハイライト
+  grd.addColorStop(0.80,'#241f1a');
+  grd.addColorStop(1.00,'#0a0c0a');  // 床（暗）
+  g.fillStyle=grd;g.fillRect(0,0,16,128);
+  const t=new THREE.CanvasTexture(c);t.mapping=THREE.EquirectangularReflectionMapping;return t;
 }
 function initScene(){
   const host=document.getElementById('stage');
@@ -677,23 +693,33 @@ function initScene(){
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   host.insertBefore(renderer.domElement,document.getElementById('vig'));
   scene=new THREE.Scene();
+  scene.fog=new THREE.Fog(0x0c0d10,17,34); // 奥行きの空気感（背景を自然に沈める）
   camera=new THREE.PerspectiveCamera(FOV,1,0.1,200);
-  // 怪しい雰囲気：ほぼ真上のスポットライト（影付き）＋柄を照らす弱い前方フィル
-  scene.add(new THREE.AmbientLight(0x5a6478,0.28));
-  const spot=new THREE.SpotLight(0xfff1d4,2.1,90,Math.PI/4.6,0.6,1.0);
-  spot.position.set(0,18,-5);spot.target.position.set(0,0,1.4);scene.add(spot);scene.add(spot.target); // 卓の奥寄りから照らす（手前のテカリを抑える）
+  // 環境マップ（柔らかな映り込みで象牙・点棒の質感を底上げ）
+  try{const pmrem=new THREE.PMREMGenerator(renderer);const envTex=buildEnvTexture();
+    scene.environment=pmrem.fromEquirectangular(envTex).texture;envTex.dispose();pmrem.dispose();}
+  catch(e){console.warn('env map failed',e);}
+  // ライティング：真上やや奥のスポット＋暖色オレンジのピンライト＋柄を起こす前方フィル
+  scene.add(new THREE.AmbientLight(0x5a6478,0.26));
+  const spot=new THREE.SpotLight(0xfff1d4,2.0,90,Math.PI/4.6,0.6,1.0);
+  spot.position.set(0,18,-5);spot.target.position.set(0,0,1.4);scene.add(spot);scene.add(spot.target); // 卓の奥寄りから照らす
   spot.castShadow=true;spot.shadow.mapSize.set(2048,2048);
   spot.shadow.camera.near=4;spot.shadow.camera.far=60;spot.shadow.bias=-0.0004;spot.shadow.radius=4;
-  const fill=new THREE.DirectionalLight(0xffeccf,0.22);fill.position.set(0,7,9);scene.add(fill);
+  // オレンジのピンライト（卓に暖色の溜まりを作る）
+  const pin=new THREE.SpotLight(0xff8a38,1.8,42,Math.PI/7.5,0.78,1.2);
+  pin.position.set(-5.5,9,5.5);pin.target.position.set(-0.6,0,1.9);scene.add(pin);scene.add(pin.target);
+  // 前方フィル（手牌選択時に柄＝牌の絵柄が暗くなりすぎないように、やや強め＆暖色）
+  const fill=new THREE.DirectionalLight(0xffe9cf,0.34);fill.position.set(0,7,11);scene.add(fill);
   const fill2=new THREE.DirectionalLight(0x7e94b8,0.1);fill2.position.set(-5,5,-6);scene.add(fill2);
-  // felt（ベロア／ベルベット質感）
+  // felt（ベロア／ベルベット質感：色を深く・起毛を強く・環境光をわずかに拾う）
   const ft=makeFeltTextures();
-  const felt=new THREE.Mesh(new THREE.PlaneGeometry(60,60),
-    new THREE.MeshStandardMaterial({color:0x20302a,roughness:0.96,metalness:0.0,
-      map:ft.map,normalMap:ft.normal,normalScale:new THREE.Vector2(0.5,0.5)}));
+  const felt=new THREE.Mesh(new THREE.PlaneGeometry(80,80),
+    new THREE.MeshStandardMaterial({color:0x1b2a23,roughness:0.9,metalness:0.0,
+      map:ft.map,normalMap:ft.normal,normalScale:new THREE.Vector2(0.72,0.72),envMapIntensity:0.22}));
   felt.rotation.x=-Math.PI/2;felt.position.y=0;felt.receiveShadow=true;scene.add(felt);
-  // decorative back + side walls (green-topped rows)
+  // 背景：山牌（2段）＋河（捨て牌）で卓まわりを賑やかに
   buildWalls();
+  buildKawa();
   initResultPlane();
   raycaster=new THREE.Raycaster();pointer=new THREE.Vector2();
   renderer.domElement.addEventListener('pointerdown',onPick);
@@ -719,20 +745,42 @@ function wallMats(){return [
 function buildWalls(){
   const geo=new THREE.BoxGeometry(T.W,T.D,T.H); // lying tile (green top)
   const mats=wallMats();
-  const make=(x,z,rotY)=>{const m=new THREE.Mesh(geo,mats);m.position.set(x,T.D/2,z);m.rotation.y=rotY;
-    m.castShadow=true;m.receiveShadow=true;scene.add(m);};
-  const N=15,span=N*(T.W+0.04),x0=-span/2+T.W/2;
-  for(let k=0;k<N;k++){make(x0+k*(T.W+0.04),-7.5,0);}      // back
-  const Nz=9,zspan=Nz*(T.W+0.04),z0=-7+ T.W;
-  for(let k=0;k<Nz;k++){make(-7.6,z0+k*(T.W+0.04),Math.PI/2);} // left
-  for(let k=0;k<Nz;k++){make(7.6,z0+k*(T.W+0.04),Math.PI/2);}  // right
+  // 山牌：2段積み。背景なので影は落とさない（負荷軽減）
+  const stack=(x,z,rotY)=>{[T.D/2,T.D*1.5].forEach(y=>{
+    const m=new THREE.Mesh(geo,mats);m.position.set(x,y,z);m.rotation.y=rotY;
+    m.castShadow=false;m.receiveShadow=true;scene.add(m);});};
+  const gap=T.W+0.02;
+  const N=17,span=N*gap,x0=-span/2+T.W/2;
+  for(let k=0;k<N;k++)stack(x0+k*gap,-7.7,0);                 // 奥
+  const Nz=11,z0=-7.2+T.W;
+  for(let k=0;k<Nz;k++)stack(-7.9,z0+k*gap,Math.PI/2);        // 左
+  for(let k=0;k<Nz;k++)stack(7.9,z0+k*gap,Math.PI/2);         // 右
+}
+// 河（捨て牌）：柄を上にして寝かせた牌をブロック状に並べる（背景・ピンボケ前提）
+function makeFlatTile(i,x,z,rotY){
+  const geo=new THREE.BoxGeometry(T.W*0.94,T.D,T.H*0.94);
+  const fm=new THREE.MeshStandardMaterial({map:texFor(i),roughness:0.62,envMapIntensity:0.4});
+  const side=new THREE.MeshStandardMaterial({color:0xeadfc6,roughness:0.7});
+  const m=new THREE.Mesh(geo,[side,side,fm,side,side,side]); // +y(index2) に柄
+  m.position.set(x,T.D/2,z);m.rotation.y=rotY+rndJ(0.1);m.castShadow=false;m.receiveShadow=true;scene.add(m);
+}
+function buildKawa(){
+  const rnd=()=>Math.floor(Math.random()*34);
+  const block=(cx,cz,rotY,cols,rows)=>{const c=Math.cos(rotY),s=Math.sin(rotY);
+    for(let r=0;r<rows;r++)for(let q=0;q<cols;q++){
+      const lx=(q-(cols-1)/2)*(T.W*0.99), lz=r*(T.H*0.99);
+      const x=cx+lx*c-lz*s, z=cz+lx*s+lz*c;
+      makeFlatTile(rnd(),x,z,rotY);}};
+  block(0,-4.8,0,6,3);            // 対面の河
+  block(-5.0,-2.4,Math.PI/2,6,2); // 上家の河
+  block(5.0,-2.4,Math.PI/2,6,2);  // 下家の河
 }
 function makeTile(i,win){
   const outer=new THREE.Group();let mesh;
   if(fbxReady&&tileGeoms[i]){
-    const mat=new THREE.MeshPhysicalMaterial({map:atlasTex,roughness:0.58,metalness:0.0,
-      clearcoat:0.15,clearcoatRoughness:0.5}); // テカリ（スペキュラ）を抑えて白飛び防止
-    if(atlasNormal){mat.normalMap=atlasNormal;mat.normalScale=new THREE.Vector2(-1.4,-1.4);}
+    const mat=new THREE.MeshPhysicalMaterial({map:atlasTex,color:0xfdf6e9,roughness:0.5,metalness:0.0,
+      clearcoat:0.45,clearcoatRoughness:0.3,envMapIntensity:0.6}); // 象牙＋ラッカー風コート＋柔らかな映り込み（白飛びは抑制）
+    if(atlasNormal){mat.normalMap=atlasNormal;mat.normalScale=new THREE.Vector2(-1.2,-1.2);}
     if(win){mat.emissive=new THREE.Color(0x4a3a12);mat.emissiveIntensity=0.55;}
     mesh=new THREE.Mesh(tileGeoms[i],mat);
   }else{

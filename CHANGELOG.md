@@ -5,6 +5,17 @@
 
 ---
 
+## 2026-06-18 Claude（リアリティ向上：環境光・オレンジピンライト・山牌/河・ピンボケ・質感UP）
+- ※Codexアレンジ版を探したが git(main/リモート)・ディスク・OneDriveのどこにも見当たらず。ユーザー選択により現行版(3da946f)の上で実装
+- 環境マップ(IBL)追加：buildEnvTexture()で簡易グラデequirect→PMREMGenerator→scene.environment。象牙/点棒/卓に柔らかな映り込み（try-catchで保護）
+- オレンジのピンライト追加：SpotLight(0xff8a38,1.8) を左前から卓へ。暖色の溜まりを作る（影は落とさない＝負荷軽減）
+- 手牌選択時に柄が暗くなりすぎないよう前方フィルを強化（0.22→0.34・暖色・位置(0,7,11)）
+- 背景を賑やかに：buildWalls()を山牌2段積みに（奥17/左右11、影なし）。buildKawa()で河（捨て牌）を対面6×3・左右6×2、柄を上にして配置（makeFlatTile, texFor流用）
+- 背景ピンボケ：DOF_ON=true に。BokehPass aperture0.03/maxblur0.015、focusは注視点距離に追従。fog(0x0c0d10,17,34)で奥行きの空気感。DoF初期化失敗時は通常描画にフォールバック
+- 牌(象牙)質感UP：MeshPhysical color0xfdf6e9・roughness0.5・clearcoat0.45・clearcoatRoughness0.3・envMapIntensity0.6（白飛びは抑制のまま）
+- 卓(ベロア)質感UP：色を深く0x1b2a23・roughness0.9・normalScale0.72・envMapIntensity0.22、起毛ノーマルを2オクターブ化
+- 要確認：モバイル負荷（メッシュ増＋DoF）、白飛び/暗さ、ピンボケの強さ、ピンライトの色味。重ければ河の枚数/DoF/影を削減
+
 ## 2026-06-17 Claude（鳴き・カンUI追加／点数表示を拡大）
 - 牌選択タブの下に「鳴き」バー(#callrow)を追加：ポン/チー/明カン/暗カン。前プロト(mahjong-hand-calc.html)の操作を移植
   - スコアエンジンは元から calls 対応。compute() で calcHand(hand, calls, ctx) を呼ぶよう変更
