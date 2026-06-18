@@ -5,6 +5,13 @@
 
 ---
 
+## 2026-06-18 Claude（DoFが実は無効だった不具合を修正／スタート画面さらに弱く）
+- ★重要修正：DoF（背景ボケ）はこれまで一度も有効になっていなかった。loadPostの読込順で THREE.Pass を定義する Pass.js が無く、ShaderPass/MaskPass が `extends THREE.Pass` 実行時に失敗→EffectComposer生成で例外→usePost=false に。
+  - 対策：loadPostの先頭に `postprocessing/Pass.js` を追加（THREE.Pass/FullScreenQuad を先に定義）。これで実際にDoFが動く＝奥の河/山牌がボケる
+  - これまでの aperture/maxblur/focus の調整は無効だったのが、今回から効くようになった
+- DoFを強めに：aperture 0.046→0.05、maxblur 0.022→0.03（手牌ピント・奥ボケが明確に）
+- スタート画面のフロストをさらに弱く：blur 10px→5px（saturate 118→115%）
+
 ## 2026-06-18 Claude（スタート画面のぼかし減・手牌選択でDoFを手牌ピントに固定）
 - スタート画面のフロストガラスを弱める：backdrop-filter blur 20px→10px（saturate 120→118%）。立ち上げ時のボカシ過多を解消
 - 手牌選択（建てモード camP≈0）でDoFのピントを手牌の列(z=T.Z, y=T.H/2)に固定。注視点(z=1.2)ではなく手牌そのものに合うので、手前くっきり・奥（河/山牌）ボケが明確に。演出（俯瞰）時は従来どおり注視点ピント

@@ -104,7 +104,7 @@
   #startscreen{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;
     align-items:center;justify-content:center;text-align:center;gap:26px;
     background:rgba(30,32,34,.34);
-    backdrop-filter:blur(10px) saturate(118%);-webkit-backdrop-filter:blur(10px) saturate(118%);
+    backdrop-filter:blur(5px) saturate(115%);-webkit-backdrop-filter:blur(5px) saturate(115%);
     transition:opacity 1.2s ease,backdrop-filter 1.2s ease,-webkit-backdrop-filter 1.2s ease;}
   #startscreen .st-title{font-weight:600;letter-spacing:.3em;font-size:1.5rem;color:var(--ink);
     text-shadow:0 2px 18px rgba(0,0,0,.5);}
@@ -623,6 +623,7 @@ function loadScriptSeq(urls,cb){let i=0;(function next(){if(i>=urls.length)retur
   const s=document.createElement('script');s.src=urls[i++];s.onload=next;s.onerror=()=>cb(false);document.head.appendChild(s);})();}
 function loadPost(cb){const base='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
   loadScriptSeq([
+    base+'postprocessing/Pass.js',          // THREE.Pass/FullScreenQuad を先に定義（無いと ShaderPass 等が読込時に失敗→DoF無効化）
     base+'shaders/CopyShader.js',
     base+'postprocessing/ShaderPass.js',
     base+'postprocessing/MaskPass.js',
@@ -635,7 +636,7 @@ function initComposer(){
   const host=document.getElementById('stage'),w=host.clientWidth,h=host.clientHeight;
   composer=new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene,camera));
-  bokehPass=new THREE.BokehPass(scene,camera,{focus:11,aperture:0.046,maxblur:0.022,width:w,height:h}); // 手牌にピント・奥(河/山牌)を強めにぼかす
+  bokehPass=new THREE.BokehPass(scene,camera,{focus:11,aperture:0.05,maxblur:0.03,width:w,height:h}); // 手牌にピント・奥(河/山牌)を強めにぼかす
   composer.addPass(bokehPass);
   composer.setSize(w,h);
 }
