@@ -618,7 +618,7 @@ function loadFBXTiles(cb){
 
 /* ---- DoF (BokehPass) postprocessing ---- */
 const DOF_ON=true; // DoF（背景ピンボケ）。focusは注視点距離に追従（loop内）
-let composer=null,bokehPass=null,usePost=false,curLook=null;
+let composer=null,bokehPass=null,usePost=false,curLook=null,_fpt=null;
 function loadScriptSeq(urls,cb){let i=0;(function next(){if(i>=urls.length)return cb(true);
   const s=document.createElement('script');s.src=urls[i++];s.onload=next;s.onerror=()=>cb(false);document.head.appendChild(s);})();}
 function loadPost(cb){const base='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
@@ -634,9 +634,14 @@ function loadPost(cb){const base='https://cdn.jsdelivr.net/npm/three@0.128.0/exa
   ],cb);}
 function initComposer(){
   const host=document.getElementById('stage'),w=host.clientWidth,h=host.clientHeight;
-  composer=new THREE.EffectComposer(renderer);
+  const pr=renderer.getPixelRatio();
+  let rt=null; // WebGL2ならMSAA付きRTでチラつき(ジャギ)防止（r128は WebGLMultisampleRenderTarget）
+  try{if(renderer.capabilities.isWebGL2&&THREE.WebGLMultisampleRenderTarget){
+    rt=new THREE.WebGLMultisampleRenderTarget(Math.max(2,Math.round(w*pr)),Math.max(2,Math.round(h*pr)));rt.samples=4;}}catch(e){}
+  composer=rt?new THREE.EffectComposer(renderer,rt):new THREE.EffectComposer(renderer);
+  composer.setPixelRatio(pr); // 端末解像度で描画（カスタムRT時に1へ戻るのを補正）
   composer.addPass(new THREE.RenderPass(scene,camera));
-  bokehPass=new THREE.BokehPass(scene,camera,{focus:11,aperture:0.05,maxblur:0.03,width:w,height:h}); // 手牌にピント・奥(河/山牌)を強めにぼかす
+  bokehPass=new THREE.BokehPass(scene,camera,{focus:11,aperture:0.02,maxblur:0.011,width:Math.round(w*pr),height:Math.round(h*pr)}); // 控えめなボケ
   composer.addPass(bokehPass);
   composer.setSize(w,h);
 }
@@ -848,6 +853,9 @@ function sizeResultPlane(){if(!resultPlane)return;
 function resize(){if(!renderer)return;const host=document.getElementById('stage');
   const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();
   if(composer)composer.setSize(w,h);
+  if(bokehPass){const pr=renderer.getPixelRatio();
+    bokehPass.renderTargetDepth.setSize(Math.round(w*pr),Math.round(h*pr));
+    bokehPass.uniforms['aspect'].value=camera.aspect;}
   fitCam();applyCam();
   document.getElementById('rotate').classList.toggle('show', h>w*1.05);}
 function loop(now){const t=(now||performance.now());tickTweens(t);
@@ -857,12 +865,15 @@ function loop(now){const t=(now||performance.now());tickTweens(t);
     const idleY=Math.cos(t*0.00033)*0.06+Math.cos(t*0.00091)*0.02;
     swayX+=((tgtSwayX+idleX)-swayX)*0.06;swayY+=((tgtSwayY+idleY)-swayY)*0.06;applyCam();}
   if(usePost&&composer){
-    let fd=null;
-    if(camP<0.0001)            // 手牌選択中は手牌の列(z=T.Z)にピント→奥（河/山牌）がボケる
-      fd=Math.hypot(camera.position.x,camera.position.y-T.H/2,camera.position.z-T.Z);
-    else if(curLook)           // 演出（俯瞰）時は注視点にピント
-      fd=camera.position.distanceTo(curLook);
-    if(bokehPass&&fd!=null)bokehPass.uniforms['focus'].value=fd;
+    if(bokehPass){
+      if(!_fpt)_fpt=new THREE.Vector3();
+      if(camP<0.0001)_fpt.set(0,T.H/2,T.Z);     // 手牌選択中は手牌の列にピント
+      else if(curLook)_fpt.copy(curLook);        // 演出（俯瞰）時は注視点にピント
+      camera.updateMatrixWorld();
+      camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+      _fpt.applyMatrix4(camera.matrixWorldInverse); // ビュー空間へ
+      bokehPass.uniforms['focus'].value=-_fpt.z;    // focus＝ビュー空間の奥行き（ユークリッド距離ではない）
+    }
     composer.render();
   } else if(renderer)renderer.render(scene,camera);
   requestAnimationFrame(loop);}

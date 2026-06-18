@@ -5,6 +5,12 @@
 
 ---
 
+## 2026-06-18 Claude（DoF：ボケ弱め・ピント正確化・モバイルのチラつき修正）
+- ボケが強すぎ→弱める：aperture 0.05→0.02、maxblur 0.03→0.011
+- 手牌にピントが合わない→修正：BokehShaderのfocusは「ビュー空間の奥行き(-viewZ)」を要求。ユークリッド距離ではなく camera.matrixWorldInverse で焦点点(手牌の列/注視点)をビュー空間へ変換して -z を渡すよう変更（_fpt）
+- モバイルのテクスチャのチラつき(ジャギ)→修正：EffectComposer経由でMSAAが外れ牌の細かい柄がエイリアスしていた。WebGL2で WebGLMultisampleRenderTarget(samples=4) をコンポーザに渡してMSAA有効化。setPixelRatio(pr)で端末解像度を維持。resize時に bokeh深度RTとaspectも更新
+- 調整：ボケ量は aperture/maxblur。さらに弱く/強くは数値で対応可
+
 ## 2026-06-18 Claude（DoFが実は無効だった不具合を修正／スタート画面さらに弱く）
 - ★重要修正：DoF（背景ボケ）はこれまで一度も有効になっていなかった。loadPostの読込順で THREE.Pass を定義する Pass.js が無く、ShaderPass/MaskPass が `extends THREE.Pass` 実行時に失敗→EffectComposer生成で例外→usePost=false に。
   - 対策：loadPostの先頭に `postprocessing/Pass.js` を追加（THREE.Pass/FullScreenQuad を先に定義）。これで実際にDoFが動く＝奥の河/山牌がボケる
