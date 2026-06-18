@@ -700,7 +700,7 @@ function initScene(){
   host.insertBefore(renderer.domElement,document.getElementById('vig'));
   scene=new THREE.Scene();
   scene.fog=new THREE.Fog(0x0c0d10,17,34); // 奥行きの空気感（背景を自然に沈める）
-  camera=new THREE.PerspectiveCamera(FOV,1,0.1,200);
+  camera=new THREE.PerspectiveCamera(FOV,1,0.5,70); // near/farを実シーンに合わせ深度精度UP（Zファイティング/DoF精度改善）
   // 環境マップ（柔らかな映り込みで象牙・点棒の質感を底上げ）
   try{const pmrem=new THREE.PMREMGenerator(renderer);const envTex=buildEnvTexture();
     scene.environment=pmrem.fromEquirectangular(envTex).texture;envTex.dispose();pmrem.dispose();}
