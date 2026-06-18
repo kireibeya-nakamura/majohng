@@ -5,6 +5,12 @@
 
 ---
 
+## 2026-06-19 Claude（パレット絵柄をRTTで正しく＆直立カメラを見下ろしに）
+- パレットボタンの絵柄崩れ・縦横比異常を修正：アトラスのUV切り出し（縁/ベベルまで拾い崩れていた）をやめ、実際のFBX牌の面をオフスクリーン描画(RTT)して画像化。向き・縦横比・絵柄が3D牌と完全一致
+  - getPalTex(atlasImg由来のTexture, flipY/sRGB)＋OrthographicCameraで面(+z)を正面120×168で描画→readRenderTargetPixels→上下反転してcanvas→dataURL。失敗時は faceCanvas にフォールバック
+- 直立時に「戻す/クリア」等(ctrlrow)が牌に被る問題：標準カメラを見下ろし気味に（CAM.stand pos.y1.25→1.5, look.y0.12→-0.25）→手牌が画面上寄りになり下部UIと干渉しにくく
+- 調整：被りがまだなら look.y をさらに下げる。絵柄サイズ/余白は OrthographicCamera 枠や rw/rh で調整可
+
 ## 2026-06-19 Claude（手牌選択ボタンを下段へ＆3D牌と同じ絵柄に）
 - レイアウト：#palbar の行順を ctrlrow→callrow→palrow に変更（手牌選択＝palrowを最下段へ）。3D牌との被りを解消
 - パレット画像を3D牌と同じ Mahjong.png の絵柄に：

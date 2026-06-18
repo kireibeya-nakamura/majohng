@@ -510,37 +510,45 @@ function faceCanvas(i,w,h,gold){const c=document.createElement('canvas');c.width
     g.lineWidth=w*0.06;g.strokeStyle='#ecc863';path();g.stroke();}
   return c;}
 const palCache={};
-// 3D牌と同じ絵柄をボタンにする：FBX牌の「面のUV矩形」を取り、Mahjong.png から切り出す
-let atlasImg=null;
+// 3D牌と同じ絵柄をボタンにする：実際のFBX牌の面をオフスクリーン描画(RTT)して画像化＝向き/縦横比/絵柄が完全一致
+let atlasImg=null,palTex=null;
 function loadAtlasImg(cb){if(atlasImg)return cb&&cb(atlasImg);
   const im=new Image();im.crossOrigin='anonymous';
   im.onload=()=>{atlasImg=im;cb&&cb(im);};im.onerror=()=>cb&&cb(null);im.src='assets/Mahjong.png';}
-const _uvRect={};
-function tileFaceUVRect(i){
-  if(_uvRect[i]!==undefined)return _uvRect[i];
-  const g=(typeof tileGeoms!=='undefined')&&tileGeoms&&tileGeoms[i];
-  if(!g||!g.attributes||!g.attributes.uv||!g.attributes.normal)return _uvRect[i]=null;
-  const uv=g.attributes.uv,nm=g.attributes.normal,index=g.index,cnt=index?index.count:uv.count;
-  let minU=1e9,maxU=-1e9,minV=1e9,maxV=-1e9,found=false;
-  for(let k=0;k<cnt;k++){const vi=index?index.getX(k):k;
-    if(nm.getZ(vi)>0.6){const u=uv.getX(vi),v=uv.getY(vi);   // 面は+z向き（牌を立てる処理後）
-      if(u<minU)minU=u;if(u>maxU)maxU=u;if(v<minV)minV=v;if(v>maxV)maxV=v;found=true;}}
-  return _uvRect[i]=found?{minU,maxU,minV,maxV}:null;
+function getPalTex(){if(palTex)return palTex;if(!atlasImg)return null;
+  palTex=new THREE.Texture(atlasImg);palTex.flipY=true;palTex.anisotropy=4;
+  if(THREE.sRGBEncoding!==undefined)palTex.encoding=THREE.sRGBEncoding;palTex.needsUpdate=true;return palTex;}
+function renderTileFaceURL(i){
+  try{
+    if(!renderer||!(typeof tileGeoms!=='undefined')||!tileGeoms||!tileGeoms[i])return null;
+    const tex=getPalTex();if(!tex)return null;
+    const mat=new THREE.MeshBasicMaterial({map:tex});
+    const mesh=new THREE.Mesh(tileGeoms[i],mat);
+    const sc=new THREE.Scene();sc.add(mesh);
+    const cam=new THREE.OrthographicCamera(-T.W/2,T.W/2,T.H/2,-T.H/2,0.1,3);
+    cam.position.set(0,0,1.2);cam.lookAt(0,0,0); // 牌の面(+z)を正面から
+    const rw=120,rh=Math.round(rw*T.H/T.W);
+    const rt=new THREE.WebGLRenderTarget(rw,rh,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter});
+    if(THREE.sRGBEncoding!==undefined)rt.texture.encoding=THREE.sRGBEncoding;
+    const prevRT=renderer.getRenderTarget(),prevAC=renderer.autoClear,pcol=new THREE.Color();
+    renderer.getClearColor(pcol);const pal=renderer.getClearAlpha();
+    renderer.autoClear=true;renderer.setRenderTarget(rt);
+    renderer.setClearColor(0xece3cf,1);renderer.clear();renderer.render(sc,cam);
+    const buf=new Uint8Array(rw*rh*4);renderer.readRenderTargetPixels(rt,0,0,rw,rh,buf);
+    renderer.setRenderTarget(prevRT);renderer.autoClear=prevAC;renderer.setClearColor(pcol,pal);
+    const c=document.createElement('canvas');c.width=rw;c.height=rh;const ctx=c.getContext('2d');
+    const img=ctx.createImageData(rw,rh);
+    for(let y=0;y<rh;y++){const sy=rh-1-y;for(let x=0;x<rw;x++){const s=(sy*rw+x)*4,d=(y*rw+x)*4; // 上下反転
+      img.data[d]=buf[s];img.data[d+1]=buf[s+1];img.data[d+2]=buf[s+2];img.data[d+3]=255;}}
+    ctx.putImageData(img,0,0);rt.dispose();mat.dispose();
+    return c.toDataURL();
+  }catch(e){console.warn('tile face RTT failed',e);return null;}
 }
 function palImg(i){
   if(palCache[i])return palCache[i];
-  const r=atlasImg?tileFaceUVRect(i):null;
-  if(r){
-    const W=atlasImg.naturalWidth||atlasImg.width,H=atlasImg.naturalHeight||atlasImg.height;
-    const sx=r.minU*W,sw=Math.max(1,(r.maxU-r.minU)*W);
-    const sy=(1-r.maxV)*H,sh=Math.max(1,(r.maxV-r.minV)*H); // atlasTexはflipY=true→画像y=(1-v)*H
-    const cw=108,ch=Math.max(40,Math.round(cw*sh/sw));
-    const c=document.createElement('canvas');c.width=cw;c.height=ch;const g=c.getContext('2d');
-    g.fillStyle='#efe7d2';g.fillRect(0,0,cw,ch);          // 象牙の地（万一の透明対策）
-    g.drawImage(atlasImg,sx,sy,sw,sh,0,0,cw,ch);
-    return palCache[i]=c.toDataURL();
-  }
-  const c=faceCanvas(i,108,150,false);return palCache[i]=c.toDataURL(); // フォールバック（FBX/アトラス未読込時）
+  const url=renderTileFaceURL(i);
+  if(url)return palCache[i]=url;
+  const c=faceCanvas(i,108,150,false);return palCache[i]=c.toDataURL(); // フォールバック（FBX未読込時）
 }
 function refreshPalette(){for(const k in palCache)delete palCache[k];if(typeof curSuit!=='undefined')buildPalette(curSuit);}
 
@@ -573,7 +581,7 @@ function gong(){if(!soundOn||!actx)return;[96,128,192,256].forEach((f,i)=>tone(f
 const T={W:0.6,H:0.84,D:0.36,GAP:0.1,Z:1.4};
 const FOV=26; // 望遠寄り（焦点距離深め）で牌を大きく見せる
 const CAM={
-  stand:{pos:[0,1.25,12],look:[0,0.12,1.2],up:[0,1,0]},
+  stand:{pos:[0,1.5,12],look:[0,-0.25,1.2],up:[0,1,0]}, // やや見下ろし＝手牌を画面上寄りにして下のUIと被らせない
   reveal:{pos:[0,9.6,1.9],look:[0,0,1.9],up:[0,0,-1]}
 };
 let THREE_OK=false,renderer,scene,camera,texCache={},winTexCache={},tiles=[],raycaster,pointer,camP=0,fallen=false;
