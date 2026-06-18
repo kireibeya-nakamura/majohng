@@ -5,6 +5,15 @@
 
 ---
 
+## 2026-06-19 Claude（DoFをレイヤー分離：手牌は常にくっきり／背景だけボケ）
+- 切り分け：倒れる「瞬間」だけチラつく＝動く牌の細かい柄が後処理DoFでシマー。直立時の手牌が薄い/ピント甘いも、コンポーザが前景の牌まで巻き込んでいたため
+- 対策（レイヤー分離レンダリング）：
+  - 手牌メッシュ(makeTile)と結果プレーン(initResultPlane)を layer1（前景）へ。背景(felt/山牌/河)は layer0
+  - loop：(1) camera.layers.set(0) で背景のみ composer(DoF) 描画 →(2) autoClear=false+clearDepth して camera.layers.set(1) で手牌・結果を renderer で「くっきり」上描き
+  - ライトは enableAll で前景も照らす。raycaster も enableAll でクリック判定維持。失敗時は usePost=false にして通常描画へフォールバック（try/catch）
+  - これで「手牌くっきり＋背景ボケ＋倒れる時もチラつかない＋薄くならない」を同時に達成する狙い
+- 背景ボケ量(aperture0.02/maxblur0.011)・near0.5/far70 は据え置き
+
 ## 2026-06-18 Claude（カメラ深度精度を改善：テクスチャのチラつき＆手牌ピント対策）
 - 推定原因：camera near/far が 0.1/200 と極端で深度バッファ精度が低く、モバイルで奥の山牌/河/卓がZファイティング→「テクスチャがバグる/チラつく」。DoFの深度判定も不正確で手牌のピントが甘くなる
 - 対策：PerspectiveCamera の near 0.1→0.5、far 200→70（実シーンの距離に合わせる）。深度精度が大幅UP。BokehPassは毎フレーム camera.near/far を nearClip/farClip に反映するのでDoFの焦点判定も正確化

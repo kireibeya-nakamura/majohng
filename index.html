@@ -727,7 +727,8 @@ function initScene(){
   buildWalls();
   buildKawa();
   initResultPlane();
-  raycaster=new THREE.Raycaster();pointer=new THREE.Vector2();
+  scene.traverse(o=>{if(o.isLight)o.layers.enableAll();}); // ライトは前景(layer1)の牌も照らす
+  raycaster=new THREE.Raycaster();raycaster.layers.enableAll();pointer=new THREE.Vector2(); // 牌(layer1)もクリック判定
   renderer.domElement.addEventListener('pointerdown',onPick);
   const el=renderer.domElement;
   el.addEventListener('pointerdown',onPtrDown);
@@ -799,6 +800,7 @@ function makeTile(i,win){
   }
   mesh.position.set(0,T.H/2,0);
   mesh.castShadow=true;mesh.receiveShadow=true;
+  mesh.layers.set(1); // 前景レイヤー：DoFを通さず常にくっきり描画
   outer.add(mesh);outer.userData={i,win};
   return {outer,mesh,i,win};
 }
@@ -865,17 +867,24 @@ function loop(now){const t=(now||performance.now());tickTweens(t);
     const idleY=Math.cos(t*0.00033)*0.06+Math.cos(t*0.00091)*0.02;
     swayX+=((tgtSwayX+idleX)-swayX)*0.06;swayY+=((tgtSwayY+idleY)-swayY)*0.06;applyCam();}
   if(usePost&&composer){
-    if(bokehPass){
-      if(!_fpt)_fpt=new THREE.Vector3();
-      if(camP<0.0001)_fpt.set(0,T.H/2,T.Z);     // 手牌選択中は手牌の列にピント
-      else if(curLook)_fpt.copy(curLook);        // 演出（俯瞰）時は注視点にピント
-      camera.updateMatrixWorld();
-      camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
-      _fpt.applyMatrix4(camera.matrixWorldInverse); // ビュー空間へ
-      bokehPass.uniforms['focus'].value=-_fpt.z;    // focus＝ビュー空間の奥行き（ユークリッド距離ではない）
-    }
-    composer.render();
-  } else if(renderer)renderer.render(scene,camera);
+    try{
+      if(bokehPass){
+        if(!_fpt)_fpt=new THREE.Vector3();
+        if(camP<0.0001)_fpt.set(0,T.H/2,T.Z);     // 待機時は手牌の列の奥行きを基準に
+        else if(curLook)_fpt.copy(curLook);        // 演出（俯瞰）時は注視点
+        camera.updateMatrixWorld();
+        camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+        _fpt.applyMatrix4(camera.matrixWorldInverse);
+        bokehPass.uniforms['focus'].value=-_fpt.z; // 背景（卓・山牌・河）のボケ基準。手牌は前景でくっきり
+      }
+      camera.layers.set(0);                 // (1) 背景のみをDoFで描画
+      composer.render();
+      const ac=renderer.autoClear;renderer.autoClear=false;renderer.clearDepth();
+      camera.layers.set(1);                 // (2) 手牌・結果をDoF無しでくっきり上描き
+      renderer.render(scene,camera);
+      renderer.autoClear=ac;camera.layers.enableAll();
+    }catch(e){console.warn('layered DoF render failed',e);usePost=false;camera.layers.enableAll();}
+  } else if(renderer){camera.layers.enableAll();renderer.render(scene,camera);}
   requestAnimationFrame(loop);}
 
 /* ---- 結果を卓の上に描画（牌の下のレイヤー） ---- */
@@ -886,6 +895,7 @@ function initResultPlane(){
   const mat=new THREE.MeshBasicMaterial({map:resultTex,transparent:true,opacity:0,depthWrite:false});
   resultPlane=new THREE.Mesh(new THREE.PlaneGeometry(17,8.5),mat);
   resultPlane.rotation.x=-Math.PI/2;resultPlane.position.set(0,0.02,1.9);resultPlane.visible=false;
+  resultPlane.layers.set(1); // 前景：点数表示は常にくっきり
   scene.add(resultPlane);
 }
 function drawYakuLine(g,name,han,cx,y,nf){
