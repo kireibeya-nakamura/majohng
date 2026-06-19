@@ -5,6 +5,11 @@
 
 ---
 
+## 2026-06-19 Claude（設定ボタンを手牌選択の下へ＆手牌に左右の余白）
+- #palbar 行順を callrow→palrow→ctrlrow に変更（戻す/クリア/効果音/設定＝ctrlrowを手牌選択palrowの下＝最下段へ）。設定ボタンの牌被りを解消
+- 手牌の左右がギリギリ→余白を追加：fitCam の収め幅 10.2→11.8（最小ds 7.6→8.4）。14枚(幅約9.7)に対し左右約1枚分の余白。見下ろし角度(look.y -0.25)は維持
+- 調整：まだ被る/余白過多なら ctrlrow位置・fitCam収め幅を再調整
+
 ## 2026-06-19 Claude（パレット絵柄をRTTで正しく＆直立カメラを見下ろしに）
 - パレットボタンの絵柄崩れ・縦横比異常を修正：アトラスのUV切り出し（縁/ベベルまで拾い崩れていた）をやめ、実際のFBX牌の面をオフスクリーン描画(RTT)して画像化。向き・縦横比・絵柄が3D牌と完全一致
   - getPalTex(atlasImg由来のTexture, flipY/sRGB)＋OrthographicCameraで面(+z)を正面120×168で描画→readRenderTargetPixels→上下反転してcanvas→dataURL。失敗時は faceCanvas にフォールバック

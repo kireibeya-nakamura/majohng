@@ -189,12 +189,6 @@
     <div id="scrollcue">▼ メニュー</div>
 
     <div id="palbar">
-      <div id="ctrlrow">
-        <button class="ic" id="undo">戻す</button>
-        <button class="ic" id="clear">クリア</button>
-        <button class="ic on" id="snd">効果音</button>
-        <button class="ic" id="gear">設定</button>
-      </div>
       <div id="callrow">
         <button class="cbtn" data-c="pon">ポン</button>
         <button class="cbtn" data-c="chi">チー</button>
@@ -210,6 +204,12 @@
         </div>
         <div class="pal" id="pal"></div>
         <button class="calc" id="calc" disabled>計算開始</button>
+      </div>
+      <div id="ctrlrow">
+        <button class="ic" id="undo">戻す</button>
+        <button class="ic" id="clear">クリア</button>
+        <button class="ic on" id="snd">効果音</button>
+        <button class="ic" id="gear">設定</button>
       </div>
     </div>
 
@@ -881,7 +881,7 @@ function applyCam(){
   if(!curLook)curLook=new THREE.Vector3();curLook.set(lx,ly,lz);
 }
 function fitCam(){const vfov=FOV*Math.PI/180,a=Math.max(0.35,camera.aspect),half=Math.tan(vfov/2);
-  let ds=10.2/(2*half*a);ds=Math.max(7.6,ds);CAM.stand.pos[2]=T.Z+ds;
+  let ds=11.8/(2*half*a);ds=Math.max(8.4,ds);CAM.stand.pos[2]=T.Z+ds; // 収め幅を広げて手牌の左右に余裕（14枚で約9.7幅＋余白）
   let dr=10.8/(2*half*a);dr=Math.max(7,dr);CAM.reveal.pos[1]=dr;
   sizeResultPlane();}
 function sizeResultPlane(){if(!resultPlane)return;
