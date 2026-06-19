@@ -5,6 +5,14 @@
 
 ---
 
+## 2026-06-19 Claude（鳴きを3D手牌に組み込み：右に別グループのブロック表示）
+- 鳴き（ポン/チー/カン）を手牌の右に3Dブロックで表示。手牌とは groupGap(=T.W*0.6) の隙間を空けて別グループと分かるように。ブロック内は密着(meldStep=T.W+0.02)
+- ポン/チー=3枚、明カン/暗カン=4枚。暗カン(kou,kan,!open)は両端(0番,3番)を裏向き(outer.rotation.y=π)
+- 全体(手牌＋鳴き)を中央寄せ。buildHandに meldTiles[] を追加（手牌tiles[]とは別管理）
+- 倒れ演出：鳴き牌もその場で倒す（place()に baseYaw 保持を追加、fallAndRevealで meldTiles も animate）
+- テキストのチップ(#calls)は削除用として残置
+- 既知：裏向き牌の見た目はFBX牌の裏面依存（変なら裏面マテリアルを差し替え）。倒れ時の裏向きは簡略（その場で倒れる）
+
 ## 2026-06-19 Claude（UIをコンパクト化：フォルダ縮小中央寄せ／ボタン1列／手牌を中央へ）
 - フォルダを牌幅にコンパクト＆中央寄せ：#palfolder width:fit-content（旧 width:100%/max680で横いっぱい＝牌が左寄りだったのを解消）。.ftabs は justify-content:center
 - タブの飛び出しを短く：.ftabs button padding 7px20px→3px15px、font .92→.82rem、角丸11→9
