@@ -885,7 +885,7 @@ function buildHand(){
   });
   // 倒れた後：その場で倒してグループ/隙間を維持（再整列しない）。あがり牌だけ少し手前＋傾けて強調
   tiles.forEach((t,k)=>{
-    if(k===winPos)t.flat={x:t.stand.x,z:T.Z+0.45,yaw:0.4};
+    if(k===winPos)t.flat={x:1.9,z:T.Z+T.H*0.95+0.2,yaw:0.5}; // あがり牌：手前右に出して斜めに置き目立たせる
     else t.flat={x:t.stand.x+rndJ(0.02),z:T.Z+rndJ(0.04),yaw:rndJ(0.06)};
   });
   meldTiles.forEach(t=>{t.flat={x:t.stand.x,z:t.stand.z,yaw:0};}); // 鳴きもその場で倒れる
