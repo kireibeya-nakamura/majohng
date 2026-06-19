@@ -60,11 +60,16 @@
     border-radius:8px;padding:5px 9px;font-size:.76rem;font-weight:700;}
   #calls .chip small{color:var(--muted);font-weight:500;margin-left:4px;}
   #callhint{font-size:.74rem;color:#ff9a86;font-weight:600;min-height:1em;}
-  #palrow{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;}
-  .tabs{display:flex;flex-direction:column;gap:4px;}
-  .tabs button{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);
-    border-radius:8px;width:36px;padding:5px 0;font-size:.84rem;font-weight:700;}
-  .tabs button.on{background:rgba(230,200,120,.16);color:var(--gold);border-color:rgba(230,200,120,.4);}
+  /* 牌選択：フォルダ風タブ（横並び）＋パレット本体 */
+  #palfolder{display:flex;flex-direction:column;align-items:stretch;width:100%;max-width:680px;}
+  .ftabs{display:flex;gap:5px;padding:0 12px;}
+  .ftabs button{appearance:none;border:1px solid var(--line);border-bottom:none;color:var(--muted);
+    background:rgba(26,28,28,.72);border-radius:11px 11px 0 0;padding:7px 20px;font-size:.92rem;font-weight:700;
+    position:relative;top:1px;}
+  .ftabs button.on{background:rgba(46,50,46,.97);color:var(--gold);border-color:rgba(230,200,120,.45);}
+  .palbody{display:flex;align-items:center;gap:8px;background:rgba(46,50,46,.97);
+    border:1px solid var(--line);border-radius:0 12px 12px 12px;padding:7px 9px;
+    box-shadow:0 6px 20px rgba(0,0,0,.4);}
   .pal{flex:0 1 auto;display:flex;justify-content:center;gap:5px;overflow-x:auto;padding:2px 0;scrollbar-width:none;}
   .pal::-webkit-scrollbar{display:none;}
   .pal button{flex:0 0 auto;appearance:none;border:none;background:none;padding:0;border-radius:6px;overflow:hidden;
@@ -189,6 +194,16 @@
     <div id="scrollcue">▼ メニュー</div>
 
     <div id="palbar">
+      <div id="palfolder">
+        <div class="ftabs" id="tabs">
+          <button data-s="0" class="on">萬</button><button data-s="1">筒</button>
+          <button data-s="2">索</button><button data-s="3">字</button>
+        </div>
+        <div class="palbody">
+          <div class="pal" id="pal"></div>
+          <button class="calc" id="calc" disabled>計算開始</button>
+        </div>
+      </div>
       <div id="callrow">
         <button class="cbtn" data-c="pon">ポン</button>
         <button class="cbtn" data-c="chi">チー</button>
@@ -196,14 +211,6 @@
         <button class="cbtn" data-c="ankan">暗カン</button>
         <span id="calls"></span>
         <span id="callhint"></span>
-      </div>
-      <div id="palrow">
-        <div class="tabs" id="tabs">
-          <button data-s="0" class="on">萬</button><button data-s="1">筒</button>
-          <button data-s="2">索</button><button data-s="3">字</button>
-        </div>
-        <div class="pal" id="pal"></div>
-        <button class="calc" id="calc" disabled>計算開始</button>
       </div>
       <div id="ctrlrow">
         <button class="ic" id="undo">戻す</button>
@@ -581,7 +588,7 @@ function gong(){if(!soundOn||!actx)return;[96,128,192,256].forEach((f,i)=>tone(f
 const T={W:0.6,H:0.84,D:0.36,GAP:0.1,Z:1.4};
 const FOV=26; // 望遠寄り（焦点距離深め）で牌を大きく見せる
 const CAM={
-  stand:{pos:[0,1.5,12],look:[0,-0.25,1.2],up:[0,1,0]}, // やや見下ろし＝手牌を画面上寄りにして下のUIと被らせない
+  stand:{pos:[0,1.65,12],look:[0,-0.42,1.2],up:[0,1,0]}, // やや見下ろし＝手牌を画面上寄りにして下の(背の高い)UIと被らせない
   reveal:{pos:[0,9.6,1.9],look:[0,0,1.9],up:[0,0,-1]}
 };
 let THREE_OK=false,renderer,scene,camera,texCache={},winTexCache={},tiles=[],raycaster,pointer,camP=0,fallen=false;
