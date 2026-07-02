@@ -5,6 +5,10 @@
 
 ---
 
+## 2026-07-02 Claude（fix: 電脳ボタンが反応しない）
+- 原因: #holobtn(z-index:3, 右下) が全幅の #palbar(z-index:3, DOMで後) に覆われタップを奪われていた（ボタン拡大で palbar が高くなり完全に被覆）
+- 対処: #holobtn を右上へ移動＋z-index:7に。topbar等より前面で確実にタップ可能に
+
 ## 2026-07-02 Claude（電脳アガリ演出／浮遊ホロUI刷新／通常卓の質UP／ボタン反応改善）
 - 電脳アガリ演出（参考画像C準拠）：cyberOn時 drawResultTexture→drawResultTextureCyber に分岐
   - 上部に役バー（面取り枠・役名=白/翻数=金・シアン区切り）、中央下に面取りホロパネル（外枠シアン＋内枠ゴールド＋目盛りティック）

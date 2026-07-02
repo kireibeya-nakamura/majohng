@@ -189,9 +189,9 @@
 
   /* ============ 電脳モード（ホログラムUI） ============ */
   /* ホロボタン（通常卓に埋め込まれた起動スイッチ） */
-  #holobtn{position:absolute;right:max(14px,env(safe-area-inset-right));
-    bottom:calc(84px + env(safe-area-inset-bottom));z-index:3;appearance:none;cursor:pointer;
-    width:52px;height:52px;border-radius:50%;color:var(--gold);font-size:.6rem;font-weight:700;letter-spacing:.1em;
+  #holobtn{position:absolute;right:max(12px,env(safe-area-inset-right));
+    top:calc(max(10px,env(safe-area-inset-top)) + 2px);z-index:7;appearance:none;cursor:pointer;
+    width:48px;height:48px;border-radius:50%;color:var(--gold);font-size:.58rem;font-weight:700;letter-spacing:.06em;
     background:radial-gradient(circle at 50% 38%,#2a2d31,#141619 70%);
     border:1px solid rgba(230,200,120,.35);box-shadow:0 4px 14px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08);}
   #holobtn:active{transform:scale(.94);}
