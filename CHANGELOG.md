@@ -5,6 +5,21 @@
 
 ---
 
+## 2026-07-02 Claude（電脳アガリ演出／浮遊ホロUI刷新／通常卓の質UP／ボタン反応改善）
+- 電脳アガリ演出（参考画像C準拠）：cyberOn時 drawResultTexture→drawResultTextureCyber に分岐
+  - 上部に役バー（面取り枠・役名=白/翻数=金・シアン区切り）、中央下に面取りホロパネル（外枠シアン＋内枠ゴールド＋目盛りティック）
+  - ランク（倍満等）はパネル上辺に食い込む小箱、点数は巨大ゴールド発光＋小さい「点」、下段に 翻符/親子/ツモロン（シアン小）
+  - あがり牌の着地点に回転する二重投影リング showWinRing/hideWinRing（fallAndReveal 落下完了+120msで表示、buildHand/hideResult/電脳OFFで解除）
+- 電脳UIを「空中に浮くホログラム板」へ刷新：
+  - フォルダ見出しをやめタブ=独立浮遊チップ（全周面取り・発光・落ち影）。palbody は perspective rotateX(5.5deg)＋holoFloat(4.4s)でゆっくり浮遊
+  - #palbar の帯背景をほぼ透明化して板が浮いて見えるように。cbtn/icも板化（グラデ＋drop-shadow）
+  - 視線(sway)連動パララックス：loop内で #palfolder/#callrow を微移動（電脳時のみ、OFFで解除）
+  - 3Dに浮遊ホロボード追加（牌の後ろ＝前後感）：解析モニタ(右奥)/手役候補(左奥)/牌譜解析ストリップ(手牌のすぐ後ろ)。浮遊アニメ＋opacityはcyberMix追従。中身は現状ダミー数値
+- 全体を青く：body.cyber の #stage/#vig を濃紺に。3D側は applyCyberMix で amb/spot/fill/fog を暖色→寒色へ補間（ambL/spotL/fillL を initScene で捕捉）
+- 通常卓の質UP：buildTableRim() 卓の縁レール（黒革風・clearcoat、四辺のBox）を追加（両モード共通）
+- ボタン反応改善：button{touch-action:manipulation;user-select:none}（タップ遅延と誤スクロール取りこぼし対策）＋ cbtn/ic のpadding拡大・pal/calc高さ42→46px
+- 要確認：電脳アガリの見た目、浮遊UIの気持ちよさ（酔わないか）、ボタンの効き、通常卓の縁レールの見え方
+
 ## 2026-07-02 Claude（V2着手：電脳モード切替＋手牌選択画面のホログラムUI＋3D質向上）
 - 参考画像（8505B80D/FF0E73F6/87A2424D…電脳卓の完成予想図）を基準にV2開始。通常卓がデフォルト、右下の「電脳」ホロボタン(#holobtn)で電脳モードにトグル
 - UI電脳スキン（body.cyber で切替、CSSは全て body.cyber プレフィックス）:

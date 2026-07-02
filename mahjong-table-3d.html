@@ -15,6 +15,7 @@
     --cgold:#f0c56a; --cgold-glow:#ffe6a0;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  button{touch-action:manipulation;-webkit-user-select:none;user-select:none;} /* タップ遅延・誤スクロール由来の取りこぼし対策 */
   html,body{margin:0;}
   body{background:#06090a;color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
@@ -38,7 +39,7 @@
   #status{font-size:.72rem;color:var(--muted);pointer-events:none;letter-spacing:.08em;}
   #topbar .sp{flex:1;}
   .ic{appearance:none;border:1px solid var(--line);background:rgba(14,18,20,.55);color:var(--ink);
-    border-radius:10px;padding:7px 11px;font-size:.74rem;font-weight:600;backdrop-filter:blur(8px);}
+    border-radius:10px;padding:9px 14px;font-size:.74rem;font-weight:600;backdrop-filter:blur(8px);}
   .ic:active{transform:scale(.95);}
   .ic.on{color:var(--gold);border-color:rgba(230,200,120,.4);background:rgba(230,200,120,.12);}
 
@@ -57,7 +58,7 @@
   #callrow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;max-width:96vw;}
   .vsep{width:1px;align-self:stretch;margin:2px 4px;background:rgba(255,255,255,.16);}
   .cbtn{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);
-    border-radius:9px;padding:6px 11px;font-size:.78rem;font-weight:600;}
+    border-radius:9px;padding:9px 14px;font-size:.78rem;font-weight:600;}
   .cbtn.armed{background:linear-gradient(180deg,#e2705a,#c8442e);color:#fff;border-color:#a3331f;}
   #calls{display:inline-flex;flex-wrap:wrap;gap:5px;}
   #calls .chip{border:1px solid rgba(230,200,120,.4);background:rgba(230,200,120,.14);color:var(--gold);
@@ -77,11 +78,11 @@
   .pal{flex:0 1 auto;display:flex;justify-content:center;gap:5px;overflow-x:auto;padding:2px 0;scrollbar-width:none;}
   .pal::-webkit-scrollbar{display:none;}
   .pal button{flex:0 0 auto;appearance:none;border:none;background:none;padding:0;border-radius:6px;overflow:hidden;
-    box-shadow:0 2px 7px rgba(0,0,0,.5);height:42px;}
+    box-shadow:0 2px 7px rgba(0,0,0,.5);height:46px;}
   .pal button:active{transform:scale(.93);}
   .pal img{display:block;height:100%;width:auto;}
   .calc{flex:0 0 auto;border:none;color:#04210f;font-weight:800;letter-spacing:.1em;border-radius:10px;
-    padding:0 14px;height:42px;font-size:.82rem;background:linear-gradient(180deg,#f0d98c,#d8b24c);
+    padding:0 14px;height:46px;font-size:.82rem;background:linear-gradient(180deg,#f0d98c,#d8b24c);
     box-shadow:0 6px 18px rgba(216,178,76,.34);}
   .calc:disabled{background:rgba(255,255,255,.06);color:var(--muted);box-shadow:none;border:1px solid var(--line);font-weight:600;}
   .calc.ready{animation:cg 2s ease-in-out infinite;}
@@ -213,7 +214,9 @@
     background:linear-gradient(100deg,transparent,rgba(143,240,255,.5),transparent) -130% 0/55% 100% no-repeat;
     animation:traceRun .75s ease-out both;}
   /* ---- UIの電脳スキン ---- */
-  body.cyber #stage{background:radial-gradient(130% 100% at 50% 26%,#101720 0%,#0a0f16 50%,#05070b 100%);}
+  body.cyber{background:#04070d;}
+  body.cyber #stage{background:radial-gradient(130% 100% at 50% 26%,#12203a 0%,#0a1322 50%,#04070d 100%);}
+  body.cyber #vig{box-shadow:inset 0 0 170px 44px rgba(2,8,18,.8),inset 0 -56px 120px rgba(2,8,18,.55);}
   body.cyber #status{color:var(--cyan);letter-spacing:.14em;border:1px solid var(--cyan-dim);
     padding:4px 12px;background:var(--holo-fill);
     clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);}
@@ -222,20 +225,36 @@
     box-shadow:0 0 10px rgba(72,214,255,.22);}
   body.cyber #cntpill b{color:var(--cgold);}
   body.cyber #cntpill span{color:var(--cyan);}
-  body.cyber #palbar{background:linear-gradient(0deg,rgba(6,12,18,.96),rgba(6,12,18,.62) 64%,transparent);}
+  /* 空中に浮くホログラム板：帯背景をほぼ消し、板が卓上に浮いて見えるように */
+  body.cyber #palbar{background:linear-gradient(0deg,rgba(3,8,16,.72),rgba(3,8,16,.24) 55%,transparent);gap:8px;}
+  /* タブ＝独立した浮遊チップ（フォルダ見出しをやめる） */
+  body.cyber .ftabs{gap:9px;padding:0;margin-bottom:2px;}
+  body.cyber .ftabs button{top:0;border-radius:0;border:1px solid var(--cyan-line);color:var(--cyan);
+    letter-spacing:.22em;padding:6px 18px;
+    background:linear-gradient(180deg,rgba(24,44,66,.5),rgba(8,18,32,.45));
+    clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px);
+    box-shadow:0 0 0 1px rgba(72,214,255,.16) inset,0 0 14px rgba(72,214,255,.14) inset;
+    filter:drop-shadow(0 0 9px rgba(72,214,255,.4)) drop-shadow(0 7px 10px rgba(0,0,0,.45));}
+  body.cyber .ftabs button.on{color:var(--cgold);border-color:rgba(240,197,106,.7);
+    background:linear-gradient(180deg,rgba(56,46,20,.5),rgba(26,20,8,.45));
+    box-shadow:0 0 0 1px rgba(240,197,106,.22) inset,0 0 14px rgba(240,197,106,.16) inset;
+    filter:drop-shadow(0 0 10px rgba(240,197,106,.45)) drop-shadow(0 7px 10px rgba(0,0,0,.45));}
+  /* パレット本体＝奥に少し倒れた浮遊パネル（ゆっくり浮遊） */
+  @keyframes holoFloat{0%,100%{transform:perspective(950px) rotateX(5.5deg) translateY(0)}
+    50%{transform:perspective(950px) rotateX(5.5deg) translateY(-2.5px)}}
   body.cyber .palbody{border-radius:0;border:none;background:
       repeating-linear-gradient(180deg,rgba(72,214,255,.05) 0 2px,transparent 2px 5px),
-      linear-gradient(180deg,rgba(16,28,40,.85),var(--holo-fill));
-    clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);
-    box-shadow:0 0 0 1px var(--cyan-line) inset,0 0 16px rgba(72,214,255,.18) inset;
-    filter:drop-shadow(0 0 8px rgba(72,214,255,.25));}
-  body.cyber .ftabs button{border-radius:0;border:1px solid var(--cyan-dim);border-bottom:none;
-    background:rgba(8,16,24,.8);color:var(--cyan);
-    clip-path:polygon(7px 0,100% 0,100% 100%,0 100%,0 7px);}
-  body.cyber .ftabs button.on{background:rgba(16,28,40,.95);color:var(--cgold);border-color:rgba(240,197,106,.55);}
-  body.cyber .cbtn,body.cyber .ic{border-radius:0;border:1px solid var(--cyan-dim);background:rgba(10,20,30,.6);
+      linear-gradient(180deg,rgba(16,32,50,.6),rgba(6,14,26,.64));
+    clip-path:polygon(13px 0,calc(100% - 13px) 0,100% 13px,100% calc(100% - 13px),
+      calc(100% - 13px) 100%,13px 100%,0 calc(100% - 13px),0 13px);
+    box-shadow:0 0 0 1px var(--cyan-line) inset,0 0 20px rgba(72,214,255,.15) inset;
+    filter:drop-shadow(0 0 13px rgba(72,214,255,.38)) drop-shadow(0 12px 18px rgba(0,0,0,.55));
+    animation:holoFloat 4.4s ease-in-out infinite;}
+  body.cyber .cbtn,body.cyber .ic{border-radius:0;border:1px solid var(--cyan-line);
+    background:linear-gradient(180deg,rgba(20,38,58,.45),rgba(8,18,32,.42));
     color:var(--cyan);letter-spacing:.08em;backdrop-filter:none;
-    clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px);}
+    clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px);
+    filter:drop-shadow(0 0 7px rgba(72,214,255,.32)) drop-shadow(0 6px 9px rgba(0,0,0,.45));}
   body.cyber .cbtn:active,body.cyber .ic:active{color:#fff;filter:brightness(1.7) drop-shadow(0 0 8px var(--cyan-glow));}
   body.cyber .cbtn.armed{background:rgba(240,197,106,.16);color:var(--cgold);border-color:rgba(240,197,106,.6);
     filter:drop-shadow(0 0 7px rgba(240,197,106,.45));}
@@ -828,8 +847,8 @@ function initScene(){
     scene.environment=pmrem.fromEquirectangular(envTex).texture;envTex.dispose();pmrem.dispose();}
   catch(e){console.warn('env map failed',e);}
   // ライティング：真上やや奥のスポット＋暖色オレンジのピンライト＋柄を起こす前方フィル
-  scene.add(new THREE.AmbientLight(0x5a6478,0.26));
-  const spot=new THREE.SpotLight(0xfff1d4,2.45,90,Math.PI/4.6,0.6,1.0);
+  ambL=new THREE.AmbientLight(0x5a6478,0.26);scene.add(ambL);
+  const spot=new THREE.SpotLight(0xfff1d4,2.45,90,Math.PI/4.6,0.6,1.0);spotL=spot;
   spot.position.set(0,18,-5);spot.target.position.set(0,0,1.4);scene.add(spot);scene.add(spot.target); // 卓の奥寄りから照らす（少し強め）
   spot.castShadow=true;spot.shadow.mapSize.set(2048,2048);
   spot.shadow.camera.near=4;spot.shadow.camera.far=60;spot.shadow.bias=-0.0004;spot.shadow.radius=4;
@@ -837,7 +856,7 @@ function initScene(){
   const pin=new THREE.SpotLight(0xff8a38,2.3,42,Math.PI/7.5,0.78,1.2);
   pin.position.set(-5.5,9,5.5);pin.target.position.set(-0.6,0,1.9);scene.add(pin);scene.add(pin.target);
   // 前方フィル（手牌選択時に柄＝牌の絵柄が暗くなりすぎないように、やや強め＆暖色）
-  const fill=new THREE.DirectionalLight(0xffe9cf,0.34);fill.position.set(0,7,11);scene.add(fill);
+  const fill=new THREE.DirectionalLight(0xffe9cf,0.34);fill.position.set(0,7,11);scene.add(fill);fillL=fill;
   const fill2=new THREE.DirectionalLight(0x7e94b8,0.1);fill2.position.set(-5,5,-6);scene.add(fill2);
   // felt（ベロア／ベルベット質感：色を深く・起毛を強く・環境光をわずかに拾う）
   const ft=makeFeltTextures();
@@ -848,6 +867,7 @@ function initScene(){
   // 背景：山牌（2段）＋河（捨て牌）で卓まわりを賑やかに
   buildWalls();
   buildKawa();
+  buildTableRim(); // 卓の縁レール（通常時の実在感UP）
   initResultPlane();
   scene.traverse(o=>{if(o.isLight)o.layers.enableAll();}); // ライトは前景(layer1)の牌も照らす
   raycaster=new THREE.Raycaster();raycaster.layers.enableAll();pointer=new THREE.Vector2(); // 牌(layer1)もクリック判定
@@ -905,9 +925,22 @@ function buildKawa(){
   block(5.0,-2.4,Math.PI/2,6,2);  // 下家の河
 }
 
-/* ---- 電脳モード（3Dホログラムレイヤー：卓面に投影される回路・接地光・エミッタ） ---- */
-let cyberOn=false,cyberMix=0;
-const cyberFx={mats:[],lights:[],built:false};
+// 卓の縁レール（黒革風・通常/電脳共通の実在感UP）
+function buildTableRim(){
+  const mat=new THREE.MeshPhysicalMaterial({color:0x17130f,roughness:0.48,metalness:0.12,
+    clearcoat:0.35,clearcoatRoughness:0.35,envMapIntensity:0.8});
+  const RH=0.42,RW=0.62;
+  const mk=(w,d,x,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,RH,d),mat);
+    m.position.set(x,RH/2-0.02,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);};
+  mk(18.6,RW,0,-8.55);   // 奥
+  mk(18.6,RW,0,6.6);     // 手前
+  mk(RW,15.8,-9.0,-1.0); // 左
+  mk(RW,15.8,9.0,-1.0);  // 右
+}
+
+/* ---- 電脳モード（3Dホログラムレイヤー：卓面に投影される回路・接地光・エミッタ・浮遊ホロ板） ---- */
+let cyberOn=false,cyberMix=0,ambL=null,spotL=null,fillL=null,_pfEl=null,_crEl=null;
+const cyberFx={mats:[],lights:[],floaters:[],winRing:null,cols:null,built:false};
 function makeCircuitTexture(){
   const W=1024,H=640,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
   const cy=a=>`rgba(96,222,255,${a})`;
@@ -948,6 +981,37 @@ function makeGlowStripTexture(){
   g.globalCompositeOperation='destination-in';g.fillStyle=hfade;g.fillRect(0,0,256,64);
   return new THREE.CanvasTexture(c);
 }
+// 浮遊ホロボード（解析モニタ風）のテクスチャ
+function makeBoardTexture(title,rows){
+  const W=512,H=300,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+  const cy=a=>`rgba(96,222,255,${a})`;
+  const ch=26;g.beginPath();g.moveTo(ch,4);g.lineTo(W-ch,4);g.lineTo(W-4,ch);g.lineTo(W-4,H-ch);
+  g.lineTo(W-ch,H-4);g.lineTo(ch,H-4);g.lineTo(4,H-ch);g.lineTo(4,ch);g.closePath();
+  g.fillStyle='rgba(8,18,32,.5)';g.fill();
+  g.shadowColor='rgba(96,222,255,.9)';g.shadowBlur=10;g.strokeStyle=cy(0.8);g.lineWidth=2.5;g.stroke();g.shadowBlur=0;
+  g.font='600 22px "Hiragino Kaku Gothic ProN",sans-serif';g.fillStyle=cy(0.95);g.textAlign='left';
+  g.fillText(title,28,44);
+  g.fillStyle=cy(0.35);g.fillRect(28,56,W-56,2);
+  g.font='500 24px "Hiragino Kaku Gothic ProN",sans-serif';
+  rows.forEach((row,i)=>{const y=102+i*52;
+    g.fillStyle='#dceef8';g.textAlign='left';g.fillText(row[0],32,y);
+    g.fillStyle='#f0c56a';g.textAlign='right';g.fillText(row[1],W-32,y);
+    g.fillStyle=cy(0.16);g.fillRect(32,y+14,W-64,1);});
+  for(let i=0;i<16;i++){const bh=5+Math.random()*22;   // 下部の飾りバー
+    g.fillStyle=cy(0.28+Math.random()*0.3);g.fillRect(30+i*29,H-24-bh,12,bh);}
+  return new THREE.CanvasTexture(c);
+}
+// 手牌の背後を横切る読み出しストリップ
+function makeStripTexture(){
+  const W=1024,H=128,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+  const cy=a=>`rgba(96,222,255,${a})`;
+  g.fillStyle='rgba(8,18,32,.4)';g.fillRect(2,10,W-4,H-20);
+  g.shadowColor='rgba(96,222,255,.8)';g.shadowBlur=8;g.strokeStyle=cy(0.6);g.lineWidth=2;g.strokeRect(2,10,W-4,H-20);g.shadowBlur=0;
+  g.font='600 30px "Hiragino Kaku Gothic ProN",monospace';g.fillStyle=cy(0.9);g.textAlign='left';
+  g.fillText('牌譜解析 ─ TILE MATRIX SYNC 98.7%',26,56);
+  for(let i=0;i<38;i++){g.fillStyle=cy(0.15+Math.random()*0.5);g.fillRect(26+i*25,76,15,24);}
+  return new THREE.CanvasTexture(c);
+}
 function buildCyberLayer(){
   if(cyberFx.built||!scene)return;cyberFx.built=true;
   const mk=(geo,map,o)=>{const m=new THREE.Mesh(geo,
@@ -955,6 +1019,18 @@ function buildCyberLayer(){
     m.rotation.x=-Math.PI/2;scene.add(m);cyberFx.mats.push({m:m.material,o});return m;};
   mk(new THREE.PlaneGeometry(16.4,10.6),makeCircuitTexture(),0.5).position.set(0,0.006,-1.0);   // 卓面の回路投影
   mk(new THREE.PlaneGeometry(11.6,0.85),makeGlowStripTexture(),0.8).position.set(0,0.009,T.Z+0.12); // 手牌下の接地光
+  // 空中に浮くホロ板（牌の後ろ＝前後感）。通常ブレンドで"板"の実在感を出す
+  const board=(tex,w,h,x,y,z,ry,o)=>{
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
+      new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));
+    m.position.set(x,y,z);m.rotation.y=ry;scene.add(m);
+    cyberFx.mats.push({m:m.material,o});
+    cyberFx.floaters.push({m,y0:y,r0:ry,ph:Math.random()*6.28});return m;};
+  board(makeBoardTexture('解析モニタ',[['全体候補数','128通り'],['有効候補数','87通り'],['計算精度','98.7%']]),
+    3.4,2.0,5.0,2.4,-6.9,-0.16,0.92);
+  board(makeBoardTexture('手役候補',[['平和','52.1%'],['一盃口','32.8%'],['清一色','15.1%']]),
+    3.4,2.0,-5.0,2.15,-6.7,0.16,0.92);
+  board(makeStripTexture(),8.0,1.0,0,1.15,-0.85,0,0.65); // 手牌のすぐ後ろを横切る読み出し
   // 四隅エミッタ（投影機）
   const em=new THREE.MeshBasicMaterial({color:0x9feaff,transparent:true,opacity:0});
   [[-5.7,4.6],[5.7,4.6],[-5.7,-5.4],[5.7,-5.4]].forEach(p=>{
@@ -965,10 +1041,37 @@ function buildCyberLayer(){
   const rim=new THREE.DirectionalLight(0x59d6ff,0);rim.position.set(0,5,-9);rim.layers.enableAll();scene.add(rim);
   const pl=new THREE.PointLight(0x48d6ff,0,16,2);pl.position.set(0,2.6,5.2);pl.layers.enableAll();scene.add(pl);
   cyberFx.lights.push({l:rim,i:0.3},{l:pl,i:0.5});
+  // 電脳時の色（暖色→寒色へ v で補間）
+  cyberFx.cols={ambW:new THREE.Color(0x5a6478),ambC:new THREE.Color(0x50749c),
+    spotW:new THREE.Color(0xfff1d4),spotC:new THREE.Color(0xe4f0ff),
+    fillW:new THREE.Color(0xffe9cf),fillC:new THREE.Color(0xbcd8ff),
+    fogW:new THREE.Color(0x0c0d10),fogC:new THREE.Color(0x0a1526)};
 }
 function applyCyberMix(v){cyberMix=v;
   cyberFx.mats.forEach(x=>x.m.opacity=x.o*v);
-  cyberFx.lights.forEach(x=>x.l.intensity=x.i*v);}
+  cyberFx.lights.forEach(x=>x.l.intensity=x.i*v);
+  const C=cyberFx.cols;
+  if(C){ // 空気を青く（ライト・フォグを寒色へ補間）
+    if(ambL)ambL.color.copy(C.ambW).lerp(C.ambC,v);
+    if(spotL)spotL.color.copy(C.spotW).lerp(C.spotC,v);
+    if(fillL)fillL.color.copy(C.fillW).lerp(C.fillC,v);
+    if(scene&&scene.fog)scene.fog.color.copy(C.fogW).lerp(C.fogC,v);
+  }}
+/* あがり牌の投影リング（電脳アガリ演出） */
+function showWinRing(x,z){
+  if(!cyberOn||!scene)return;hideWinRing();
+  const grp=new THREE.Group();
+  const mat1=new THREE.MeshBasicMaterial({color:0x6ee4ff,transparent:true,opacity:0,
+    side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false});
+  const mat2=mat1.clone();
+  const r1=new THREE.Mesh(new THREE.RingGeometry(0.62,0.68,48),mat1);r1.rotation.x=-Math.PI/2;
+  const r2=new THREE.Mesh(new THREE.RingGeometry(0.44,0.465,48),mat2);r2.rotation.x=-Math.PI/2;r2.position.y=0.004;
+  grp.add(r1);grp.add(r2);grp.position.set(x,0.014,z);scene.add(grp);
+  const mats=[{m:mat1,o:0.85},{m:mat2,o:0.55}];
+  cyberFx.winRing={grp,mats};
+  tween(500,0,e=>{if(cyberFx.winRing)mats.forEach(x=>x.m.opacity=x.o*e);});
+}
+function hideWinRing(){const w=cyberFx.winRing;if(!w)return;scene.remove(w.grp);cyberFx.winRing=null;}
 function cyberSound(on){if(!soundOn||!actx)return;
   if(on){tone(72,0.9,'sine',0.09);tone(144,0.7,'sine',0.05);
     setTimeout(()=>{tone(1320,0.18,'sine',0.06);tone(1760,0.3,'sine',0.04);},260);}
@@ -979,6 +1082,7 @@ function setCyber(on){
   document.getElementById('holobtn').classList.toggle('on',on);
   if(on)['.palbody','#cntpill','#status','#systag'].forEach(sel=>document.querySelectorAll(sel).forEach(el=>{
     el.classList.remove('awaken');void el.offsetWidth;el.classList.add('awaken');}));
+  if(!on){if(_pfEl)_pfEl.style.transform='';if(_crEl)_crEl.style.transform='';hideWinRing();}
   ensureCtx();cyberSound(on);
   if(!THREE_OK)return;buildCyberLayer();
   const from=cyberMix,to=on?1:0;
@@ -1010,7 +1114,7 @@ function rndJ(a){return (Math.random()*2-1)*a;}
 let meldTiles=[]; // 鳴き（副露）の3D牌。手牌とは別グループ
 function buildHand(){
   if(!THREE_OK)return;
-  clearTenbo();
+  clearTenbo();hideWinRing();
   tiles.forEach(t=>scene.remove(t.outer));tiles=[];
   meldTiles.forEach(t=>scene.remove(t.outer));meldTiles=[];
   fallen=false;camP=0;applyCam();
@@ -1088,6 +1192,20 @@ function loop(now){const t=(now||performance.now());tickTweens(t);
     const idleX=Math.sin(t*0.00045)*0.09+Math.sin(t*0.0011)*0.03;
     const idleY=Math.cos(t*0.00033)*0.06+Math.cos(t*0.00091)*0.02;
     swayX+=((tgtSwayX+idleX)-swayX)*0.06;swayY+=((tgtSwayY+idleY)-swayY)*0.06;applyCam();}
+  if(cyberMix>0.001&&cyberFx.built){
+    // ホロ板の浮遊＆リング回転（電脳の生きた空気）
+    for(const f of cyberFx.floaters){f.m.position.y=f.y0+Math.sin(t*0.0006+f.ph)*0.055;
+      f.m.rotation.y=f.r0+Math.sin(t*0.00033+f.ph)*0.03;}
+    if(cyberFx.winRing)cyberFx.winRing.grp.rotation.y=t*0.00045;
+  }
+  if(cyberOn&&camP<0.0001){
+    // UIのホロ板を視線（sway）に合わせて僅かにパララックス
+    if(!_pfEl)_pfEl=document.getElementById('palfolder');
+    if(!_crEl)_crEl=document.getElementById('callrow');
+    const px=-swayX*7,py=swayY*5;
+    if(_pfEl)_pfEl.style.transform='translate('+px+'px,'+py+'px)';
+    if(_crEl)_crEl.style.transform='translate('+(px*0.55)+'px,'+(py*0.55)+'px)';
+  }
   if(usePost&&composer){
     try{
       if(bokehPass){
@@ -1131,6 +1249,7 @@ function drawYakuLine(g,name,han,cx,y,nf){
   g.shadowBlur=0;g.shadowOffsetY=0;
 }
 function drawResultTexture(r,kYaku,scoreVal){
+  if(cyberOn){drawResultTextureCyber(r,kYaku,scoreVal);return;}
   const W=resultCanvas.width,H=resultCanvas.height,g=resultCanvas.getContext('2d'),cx=W/2;
   g.clearRect(0,0,W,H);g.textBaseline='alphabetic';
   const ys=r.yaku.slice(0,Math.max(0,kYaku));
@@ -1174,6 +1293,77 @@ function drawResultTexture(r,kYaku,scoreVal){
   }
   resultTex.needsUpdate=true;
 }
+/* 電脳アガリ表示（参考画像C準拠：役バー＋面取りホロパネル＋ゴールド発光点数） */
+function chamferPath(g,x,y,w,h,ch){
+  g.beginPath();g.moveTo(x+ch,y);g.lineTo(x+w-ch,y);g.lineTo(x+w,y+ch);g.lineTo(x+w,y+h-ch);
+  g.lineTo(x+w-ch,y+h);g.lineTo(x+ch,y+h);g.lineTo(x,y+h-ch);g.lineTo(x,y+ch);g.closePath();}
+function drawResultTextureCyber(r,kYaku,scoreVal){
+  const W=resultCanvas.width,H=resultCanvas.height,g=resultCanvas.getContext('2d'),cx=W/2;
+  g.clearRect(0,0,W,H);
+  const CY=a=>`rgba(96,222,255,${a})`,GD='#f0c56a',GDG='rgba(255,230,160,.9)';
+  const ys=r.yaku.slice(0,Math.max(0,kYaku)),all=r.yaku;
+  /* --- 役バー（上部・面取り枠。役名=白/翻=金） --- */
+  g.textBaseline='middle';
+  let nf=H*0.075;const sep=()=>nf*1.15;
+  const rowW=()=>{let tot=0;all.forEach((yy,i)=>{
+    g.font=`700 ${nf}px "Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif`;tot+=g.measureText(yy.name).width;
+    g.font=`700 ${nf*0.72}px sans-serif`;tot+=nf*0.3+g.measureText(String(yy.han)).width;
+    if(i<all.length-1)tot+=sep();});return tot;};
+  while(rowW()>W*0.8&&nf>16)nf*=0.95;
+  const barH=Math.max(nf*1.9,H*0.12),barY=H*0.03,bw=Math.min(W*0.92,rowW()+nf*2.6),bx=cx-bw/2;
+  g.save();chamferPath(g,bx,barY,bw,barH,barH*0.34);
+  g.fillStyle='rgba(8,18,30,.55)';g.fill();
+  g.strokeStyle=CY(0.75);g.lineWidth=2.5;g.shadowColor=CY(0.8);g.shadowBlur=14;g.stroke();g.restore();
+  let x=cx-rowW()/2;const yy0=barY+barH/2;
+  g.textAlign='left';
+  for(let i=0;i<ys.length;i++){const yy=ys[i];
+    g.font=`700 ${nf}px "Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif`;g.fillStyle='#eaf2f6';
+    g.shadowColor=CY(0.55);g.shadowBlur=nf*0.14;
+    g.fillText(yy.name,x,yy0);x+=g.measureText(yy.name).width+nf*0.3;
+    g.font=`700 ${nf*0.72}px sans-serif`;g.fillStyle=GD;g.shadowColor='rgba(240,197,106,.7)';
+    g.fillText(String(yy.han),x,yy0);x+=g.measureText(String(yy.han)).width;g.shadowBlur=0;
+    if(i<all.length-1){g.fillStyle=CY(0.3);g.fillRect(x+sep()/2-1.5,barY+barH*0.3,3,barH*0.4);}
+    x+=sep();}
+  /* --- 点数パネル（中央下・面取り。外枠シアン＋内枠ゴールド） --- */
+  const pw=W*0.6,ph=H*0.46,px=cx-pw/2,py=H*0.44;
+  g.save();chamferPath(g,px,py,pw,ph,ph*0.17);
+  g.fillStyle='rgba(6,14,26,.58)';g.fill();
+  g.strokeStyle=CY(0.8);g.lineWidth=3;g.shadowColor=CY(0.7);g.shadowBlur=16;g.stroke();g.restore();
+  g.save();chamferPath(g,px+12,py+12,pw-24,ph-24,ph*0.14);
+  g.strokeStyle='rgba(240,197,106,.5)';g.lineWidth=1.5;g.stroke();g.restore();
+  // コーナーティック（精密機器の目盛り）
+  g.fillStyle=CY(0.65);
+  [[px+8,py+ph*0.5],[px+pw-14,py+ph*0.5]].forEach(p=>{for(let k=-2;k<=2;k++)g.fillRect(p[0],p[1]+k*ph*0.09,6,2);});
+  /* ランクの小箱（倍満など。パネル上辺に食い込ませる） */
+  if(r.rank){const rf=H*0.068;g.font=`700 ${rf}px "Hiragino Mincho ProN","Yu Mincho",serif`;
+    const rw2=g.measureText(r.rank).width+rf*1.7,rh2=rf*1.75,ry=py-rh2/2;
+    g.save();chamferPath(g,cx-rw2/2,ry,rw2,rh2,rh2*0.32);
+    g.fillStyle='rgba(10,16,26,.95)';g.fill();
+    g.strokeStyle='rgba(240,197,106,.85)';g.lineWidth=2.5;g.shadowColor='rgba(240,197,106,.6)';g.shadowBlur=12;g.stroke();g.restore();
+    g.textAlign='center';g.fillStyle=GD;g.shadowColor=GDG;g.shadowBlur=rf*0.22;
+    g.font=`700 ${rf}px "Hiragino Mincho ProN","Yu Mincho",serif`;
+    g.fillText(r.rank,cx,ry+rh2/2);g.shadowBlur=0;}
+  /* 点数（巨大ゴールド発光＋小さめの「点」） */
+  const sNum=Math.round(scoreVal).toLocaleString();
+  let sf=ph*0.5;g.font=`800 ${sf}px "Hiragino Kaku Gothic ProN",sans-serif`;
+  const wOf=()=>{g.font=`800 ${sf}px "Hiragino Kaku Gothic ProN",sans-serif`;const a=g.measureText(sNum).width;
+    g.font=`800 ${sf*0.42}px "Hiragino Kaku Gothic ProN",sans-serif`;return a+sf*0.12+g.measureText('点').width;};
+  while(wOf()>pw*0.84&&sf>20)sf*=0.95;
+  const totalWd=wOf(),sy=py+ph*0.62;let sx=cx-totalWd/2;
+  g.textAlign='left';g.textBaseline='middle';
+  g.font=`800 ${sf}px "Hiragino Kaku Gothic ProN",sans-serif`;
+  g.fillStyle=GD;g.shadowColor=GDG;g.shadowBlur=sf*0.3;
+  g.fillText(sNum,sx,sy);sx+=g.measureText(sNum).width+sf*0.12;
+  g.font=`800 ${sf*0.42}px "Hiragino Kaku Gothic ProN",sans-serif`;
+  g.fillText('点',sx,sy+sf*0.14);g.shadowBlur=0;
+  /* 下段の小情報（翻・符／親子・ツモロン） */
+  const info=(r.yakuman?'':r.han+'翻 '+r.fu+'符　')+(S.dealer?'親':'子')+'・'+(S.tsumo?'ツモ':'ロン');
+  g.textAlign='center';g.font=`600 ${H*0.042}px "Hiragino Kaku Gothic ProN",sans-serif`;
+  g.fillStyle=CY(0.9);g.shadowColor=CY(0.5);g.shadowBlur=6;
+  g.fillText(info,cx,py+ph-H*0.052);g.shadowBlur=0;
+  g.textBaseline='alphabetic';
+  resultTex.needsUpdate=true;
+}
 
 function onPick(e){
   if(fallen||!tiles.length)return;
@@ -1207,13 +1397,17 @@ function fallAndReveal(r){
     t.outer.position.x=s.x+(f.x-s.x)*e;
     t.outer.position.z=s.z+(f.z-s.z)*e;
     t.outer.rotation.y=(t.baseYaw||0)+f.yaw*e;}; // 鳴き(裏向き等)のベース回転を保持
-  if(reduce){fallen=true;camP=1;applyCam();tiles.concat(meldTiles).forEach(t=>place(t,1));showResult(r,true);return;}
+  const wf=tiles[winPos]&&tiles[winPos].flat; // 電脳時：あがり牌の着地点に投影リング
+  if(reduce){fallen=true;camP=1;applyCam();tiles.concat(meldTiles).forEach(t=>place(t,1));
+    if(cyberOn&&wf)showWinRing(wf.x,wf.z);
+    showResult(r,true);return;}
   fallen=true;gong();
   tween(1000,0,(e)=>{camP=e;applyCam();});
   const n=tiles.length;
   tiles.forEach((t,k)=>tween(470,k*55,(e)=>place(t,e)));
   meldTiles.forEach((t,k)=>tween(470,(n+k)*40,(e)=>place(t,e))); // 鳴きもその場で倒す
   const fallEnd=(n-1)*55+470;
+  if(cyberOn&&wf)setTimeout(()=>showWinRing(wf.x,wf.z),fallEnd+120);
   setTimeout(()=>showResult(r,false),fallEnd+260);
 }
 
@@ -1257,7 +1451,7 @@ function hideResult(){
   const hint=document.getElementById('rp-hint');if(hint)hint.style.display='';
   const bd=document.getElementById('rp-bd');if(bd)bd.textContent='';
   const btns=document.getElementById('rp-btns');if(btns)btns.classList.remove('show');
-  clearTenbo();
+  clearTenbo();hideWinRing();
 }
 
 /* ============ 点棒（支払い）演出 ============ */
