@@ -250,6 +250,9 @@
     box-shadow:0 0 0 1px var(--cyan-line) inset,0 0 20px rgba(72,214,255,.15) inset;
     filter:drop-shadow(0 0 13px rgba(72,214,255,.38)) drop-shadow(0 12px 18px rgba(0,0,0,.55));
     animation:holoFloat 4.4s ease-in-out infinite;}
+  /* 遠近台形（PAL_PERSP試験）：フォルダ全体を奥へ倒し「手前広・奥窄まり」の板に。JS側でperspective変形を合成 */
+  body.cyber.palpersp #palfolder{transform-origin:50% 100%;transform:perspective(640px) rotateX(17deg);}
+  body.cyber.palpersp .palbody{animation:none;} /* 二重変形を避ける */
   body.cyber .cbtn,body.cyber .ic{border-radius:0;border:1px solid var(--cyan-line);
     background:linear-gradient(180deg,rgba(20,38,58,.45),rgba(8,18,32,.42));
     color:var(--cyan);letter-spacing:.08em;backdrop-filter:none;
@@ -781,7 +784,7 @@ function initComposer(){
   composer=rt?new THREE.EffectComposer(renderer,rt):new THREE.EffectComposer(renderer);
   composer.setPixelRatio(pr); // 端末解像度で描画（カスタムRT時に1へ戻るのを補正）
   composer.addPass(new THREE.RenderPass(scene,camera));
-  bokehPass=new THREE.BokehPass(scene,camera,{focus:11,aperture:0.02,maxblur:0.011,width:Math.round(w*pr),height:Math.round(h*pr)}); // 控えめなボケ
+  bokehPass=new THREE.BokehPass(scene,camera,{focus:11,aperture:0.013,maxblur:0.008,width:Math.round(w*pr),height:Math.round(h*pr)}); // 弱めのボケ（手前の縁は軽くピント・牌が最鋭）
   composer.addPass(bokehPass);
   composer.setSize(w,h);
 }
@@ -940,6 +943,7 @@ function buildTableRim(){
 
 /* ---- 電脳モード（3Dホログラムレイヤー：卓面に投影される回路・接地光・エミッタ・浮遊ホロ板） ---- */
 let cyberOn=false,cyberMix=0,ambL=null,spotL=null,fillL=null,_pfEl=null,_crEl=null;
+const PAL_PERSP=true; // 牌選択フォルダを遠近台形（手前広・奥窄まり）にする試験フラグ。falseで従来に戻る
 const cyberFx={mats:[],lights:[],floaters:[],winRing:null,cols:null,built:false};
 function makeCircuitTexture(){
   const W=1024,H=640,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
@@ -1041,6 +1045,10 @@ function buildCyberLayer(){
   const rim=new THREE.DirectionalLight(0x59d6ff,0);rim.position.set(0,5,-9);rim.layers.enableAll();scene.add(rim);
   const pl=new THREE.PointLight(0x48d6ff,0,16,2);pl.position.set(0,2.6,5.2);pl.layers.enableAll();scene.add(pl);
   cyberFx.lights.push({l:rim,i:0.3},{l:pl,i:0.5});
+  // 牌のアンダーライト（卓面すれすれの手前から青白く煽る＝ホログラム投影に照らされる牌）
+  [[-2.4,0.12,T.Z+1.15],[2.4,0.12,T.Z+1.15]].forEach(p=>{
+    const ul=new THREE.PointLight(0x7fd8ff,0,5.5,2);ul.position.set(p[0],p[1],p[2]);
+    ul.layers.enableAll();scene.add(ul);cyberFx.lights.push({l:ul,i:0.9});});
   // 電脳時の色（暖色→寒色へ v で補間）
   cyberFx.cols={ambW:new THREE.Color(0x5a6478),ambC:new THREE.Color(0x50749c),
     spotW:new THREE.Color(0xfff1d4),spotC:new THREE.Color(0xe4f0ff),
@@ -1057,18 +1065,38 @@ function applyCyberMix(v){cyberMix=v;
     if(fillL)fillL.color.copy(C.fillW).lerp(C.fillC,v);
     if(scene&&scene.fog)scene.fog.color.copy(C.fogW).lerp(C.fogC,v);
   }}
-/* あがり牌の投影リング（電脳アガリ演出） */
+/* あがり牌の投影リング（電脳アガリ演出：強発光＋逆回転アーク＋グローディスク） */
+function makeRingGlowTexture(){
+  const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
+  const gr=g.createRadialGradient(64,64,4,64,64,64);
+  gr.addColorStop(0,'rgba(160,238,255,0.95)');gr.addColorStop(0.45,'rgba(110,228,255,0.4)');gr.addColorStop(1,'rgba(110,228,255,0)');
+  g.fillStyle=gr;g.fillRect(0,0,128,128);
+  return new THREE.CanvasTexture(c);
+}
 function showWinRing(x,z){
   if(!cyberOn||!scene)return;hideWinRing();
   const grp=new THREE.Group();
-  const mat1=new THREE.MeshBasicMaterial({color:0x6ee4ff,transparent:true,opacity:0,
+  const bm=()=>new THREE.MeshBasicMaterial({color:0x8feaff,transparent:true,opacity:0,
     side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false});
-  const mat2=mat1.clone();
-  const r1=new THREE.Mesh(new THREE.RingGeometry(0.62,0.68,48),mat1);r1.rotation.x=-Math.PI/2;
-  const r2=new THREE.Mesh(new THREE.RingGeometry(0.44,0.465,48),mat2);r2.rotation.x=-Math.PI/2;r2.position.y=0.004;
-  grp.add(r1);grp.add(r2);grp.position.set(x,0.014,z);scene.add(grp);
-  const mats=[{m:mat1,o:0.85},{m:mat2,o:0.55}];
-  cyberFx.winRing={grp,mats};
+  // 足元のグロー（面で光らせる）
+  const mg=bm();mg.map=makeRingGlowTexture();mg.color.set(0xffffff);
+  const disc=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.9),mg);
+  disc.rotation.x=-Math.PI/2;grp.add(disc);
+  // 同方向にゆっくり回る二重リング
+  const g1=new THREE.Group();
+  const mat1=bm(),mat2=bm();
+  const r1=new THREE.Mesh(new THREE.RingGeometry(0.62,0.68,48),mat1);r1.rotation.x=-Math.PI/2;r1.position.y=0.004;
+  const r2=new THREE.Mesh(new THREE.RingGeometry(0.44,0.465,48),mat2);r2.rotation.x=-Math.PI/2;r2.position.y=0.006;
+  g1.add(r1);g1.add(r2);grp.add(g1);
+  // 逆回転するアーク（スキャナ風）
+  const g2=new THREE.Group();
+  const mat3=bm();
+  [0,Math.PI].forEach(a0=>{const arc=new THREE.Mesh(new THREE.RingGeometry(0.74,0.78,32,1,a0,Math.PI*0.55),mat3);
+    arc.rotation.x=-Math.PI/2;arc.position.y=0.008;g2.add(arc);});
+  grp.add(g2);
+  grp.position.set(x,0.014,z);scene.add(grp);
+  const mats=[{m:mg,o:0.5},{m:mat1,o:1.0},{m:mat2,o:0.8},{m:mat3,o:0.9}];
+  cyberFx.winRing={grp,g1,g2,mats};
   tween(500,0,e=>{if(cyberFx.winRing)mats.forEach(x=>x.m.opacity=x.o*e);});
 }
 function hideWinRing(){const w=cyberFx.winRing;if(!w)return;scene.remove(w.grp);cyberFx.winRing=null;}
@@ -1079,6 +1107,7 @@ function cyberSound(on){if(!soundOn||!actx)return;
 function setCyber(on){
   if(cyberOn===on)return;cyberOn=on;
   document.body.classList.toggle('cyber',on);
+  document.body.classList.toggle('palpersp',on&&PAL_PERSP);
   document.getElementById('holobtn').classList.toggle('on',on);
   if(on)['.palbody','#cntpill','#status','#systag'].forEach(sel=>document.querySelectorAll(sel).forEach(el=>{
     el.classList.remove('awaken');void el.offsetWidth;el.classList.add('awaken');}));
@@ -1196,14 +1225,14 @@ function loop(now){const t=(now||performance.now());tickTweens(t);
     // ホロ板の浮遊＆リング回転（電脳の生きた空気）
     for(const f of cyberFx.floaters){f.m.position.y=f.y0+Math.sin(t*0.0006+f.ph)*0.055;
       f.m.rotation.y=f.r0+Math.sin(t*0.00033+f.ph)*0.03;}
-    if(cyberFx.winRing)cyberFx.winRing.grp.rotation.y=t*0.00045;
+    if(cyberFx.winRing){cyberFx.winRing.g1.rotation.y=t*0.00045;cyberFx.winRing.g2.rotation.y=-t*0.0011;}
   }
   if(cyberOn&&camP<0.0001){
     // UIのホロ板を視線（sway）に合わせて僅かにパララックス
     if(!_pfEl)_pfEl=document.getElementById('palfolder');
     if(!_crEl)_crEl=document.getElementById('callrow');
     const px=-swayX*7,py=swayY*5;
-    if(_pfEl)_pfEl.style.transform='translate('+px+'px,'+py+'px)';
+    if(_pfEl)_pfEl.style.transform='translate('+px+'px,'+py+'px)'+(PAL_PERSP?' perspective(640px) rotateX(17deg)':'');
     if(_crEl)_crEl.style.transform='translate('+(px*0.55)+'px,'+(py*0.55)+'px)';
   }
   if(usePost&&composer){
@@ -1324,18 +1353,29 @@ function drawResultTextureCyber(r,kYaku,scoreVal){
     g.fillText(String(yy.han),x,yy0);x+=g.measureText(String(yy.han)).width;g.shadowBlur=0;
     if(i<all.length-1){g.fillStyle=CY(0.3);g.fillRect(x+sep()/2-1.5,barY+barH*0.3,3,barH*0.4);}
     x+=sep();}
-  /* --- 点数パネル（中央下・面取り。外枠シアン＋内枠ゴールド） --- */
-  const pw=W*0.6,ph=H*0.46,px=cx-pw/2,py=H*0.44;
+  // 役バー直下のマイクロテキスト（電脳ディティール）
+  g.textAlign='center';g.font=`500 ${H*0.026}px monospace`;g.fillStyle=CY(0.45);
+  g.fillText('── YAKU ANALYSIS COMPLETE ──',cx,barY+barH+H*0.035);
+  /* --- 点数パネル（下部・面取り。牌の列と被らない高さに） --- */
+  const pw=W*0.6,ph=H*0.34,px=cx-pw/2,py=H*0.63;
   g.save();chamferPath(g,px,py,pw,ph,ph*0.17);
   g.fillStyle='rgba(6,14,26,.58)';g.fill();
   g.strokeStyle=CY(0.8);g.lineWidth=3;g.shadowColor=CY(0.7);g.shadowBlur=16;g.stroke();g.restore();
   g.save();chamferPath(g,px+12,py+12,pw-24,ph-24,ph*0.14);
   g.strokeStyle='rgba(240,197,106,.5)';g.lineWidth=1.5;g.stroke();g.restore();
-  // コーナーティック（精密機器の目盛り）
+  // コーナーティック（精密機器の目盛り）＋ゴールドのコーナーブラケット
   g.fillStyle=CY(0.65);
-  [[px+8,py+ph*0.5],[px+pw-14,py+ph*0.5]].forEach(p=>{for(let k=-2;k<=2;k++)g.fillRect(p[0],p[1]+k*ph*0.09,6,2);});
+  [[px+8,py+ph*0.5],[px+pw-14,py+ph*0.5]].forEach(p=>{for(let k=-2;k<=2;k++)g.fillRect(p[0],p[1]+k*ph*0.13,6,2);});
+  g.strokeStyle='rgba(240,197,106,.75)';g.lineWidth=3;const bk=ph*0.14;
+  [[px+6,py+6,1,1],[px+pw-6,py+6,-1,1],[px+6,py+ph-6,1,-1],[px+pw-6,py+ph-6,-1,-1]].forEach(([bxx,byy,sx2,sy2])=>{
+    g.beginPath();g.moveTo(bxx+sx2*bk,byy);g.lineTo(bxx+sx2*(bk+18),byy);g.stroke();
+    g.beginPath();g.moveTo(bxx,byy+sy2*bk);g.lineTo(bxx,byy+sy2*(bk+18));g.stroke();});
+  // パネル脇のシリアル/ステータス（電脳ディティール）
+  g.textAlign='left';g.font=`500 ${H*0.024}px monospace`;g.fillStyle=CY(0.4);
+  g.fillText('SYS v2.5 // CALC:OK',px+ph*0.16,py-H*0.016);
+  g.textAlign='right';g.fillText('ID:0x7F2A',px+pw-ph*0.16,py-H*0.016);
   /* ランクの小箱（倍満など。パネル上辺に食い込ませる） */
-  if(r.rank){const rf=H*0.068;g.font=`700 ${rf}px "Hiragino Mincho ProN","Yu Mincho",serif`;
+  if(r.rank){const rf=H*0.062;g.font=`700 ${rf}px "Hiragino Mincho ProN","Yu Mincho",serif`;
     const rw2=g.measureText(r.rank).width+rf*1.7,rh2=rf*1.75,ry=py-rh2/2;
     g.save();chamferPath(g,cx-rw2/2,ry,rw2,rh2,rh2*0.32);
     g.fillStyle='rgba(10,16,26,.95)';g.fill();
@@ -1345,11 +1385,11 @@ function drawResultTextureCyber(r,kYaku,scoreVal){
     g.fillText(r.rank,cx,ry+rh2/2);g.shadowBlur=0;}
   /* 点数（巨大ゴールド発光＋小さめの「点」） */
   const sNum=Math.round(scoreVal).toLocaleString();
-  let sf=ph*0.5;g.font=`800 ${sf}px "Hiragino Kaku Gothic ProN",sans-serif`;
+  let sf=ph*0.55;g.font=`800 ${sf}px "Hiragino Kaku Gothic ProN",sans-serif`;
   const wOf=()=>{g.font=`800 ${sf}px "Hiragino Kaku Gothic ProN",sans-serif`;const a=g.measureText(sNum).width;
     g.font=`800 ${sf*0.42}px "Hiragino Kaku Gothic ProN",sans-serif`;return a+sf*0.12+g.measureText('点').width;};
   while(wOf()>pw*0.84&&sf>20)sf*=0.95;
-  const totalWd=wOf(),sy=py+ph*0.62;let sx=cx-totalWd/2;
+  const totalWd=wOf(),sy=py+ph*0.52;let sx=cx-totalWd/2;
   g.textAlign='left';g.textBaseline='middle';
   g.font=`800 ${sf}px "Hiragino Kaku Gothic ProN",sans-serif`;
   g.fillStyle=GD;g.shadowColor=GDG;g.shadowBlur=sf*0.3;
@@ -1358,9 +1398,9 @@ function drawResultTextureCyber(r,kYaku,scoreVal){
   g.fillText('点',sx,sy+sf*0.14);g.shadowBlur=0;
   /* 下段の小情報（翻・符／親子・ツモロン） */
   const info=(r.yakuman?'':r.han+'翻 '+r.fu+'符　')+(S.dealer?'親':'子')+'・'+(S.tsumo?'ツモ':'ロン');
-  g.textAlign='center';g.font=`600 ${H*0.042}px "Hiragino Kaku Gothic ProN",sans-serif`;
+  g.textAlign='center';g.font=`600 ${H*0.04}px "Hiragino Kaku Gothic ProN",sans-serif`;
   g.fillStyle=CY(0.9);g.shadowColor=CY(0.5);g.shadowBlur=6;
-  g.fillText(info,cx,py+ph-H*0.052);g.shadowBlur=0;
+  g.fillText(info,cx,py+ph-H*0.042);g.shadowBlur=0;
   g.textBaseline='alphabetic';
   resultTex.needsUpdate=true;
 }
