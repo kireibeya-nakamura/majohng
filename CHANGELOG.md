@@ -5,6 +5,19 @@
 
 ---
 
+## 2026-07-02 Claude（V2着手：電脳モード切替＋手牌選択画面のホログラムUI＋3D質向上）
+- 参考画像（8505B80D/FF0E73F6/87A2424D…電脳卓の完成予想図）を基準にV2開始。通常卓がデフォルト、右下の「電脳」ホロボタン(#holobtn)で電脳モードにトグル
+- UI電脳スキン（body.cyber で切替、CSSは全て body.cyber プレフィックス）:
+  - トークン --cyan/#48d6ff, --cgold/#f0c56a, --holo-fill 等。パネル/ボタンは角丸→面取り(clip-path八角)、シアン枠＋暗い半透明＋薄スキャンライン
+  - .palbody=ホロパネル化、.ftabs=シアン枠(アクティブはゴールド)、.cbtn/.ic=面取りシアン、.calc=ゴールド枠パネル、#cntpill/#status=チップ化、#systag「算符計算システム v2.5」を左上に表示
+  - 覚醒演出: .awaken(::afterのスイープ光)をON時に付与。@keyframes traceRun
+- 3D電脳レイヤー（buildCyberLayer、初回ON時に生成、tweenでフェード）:
+  - 卓面の回路投影(makeCircuitTexture: 面取りフレーム＋コーナーブラケット＋マンハッタン配線、AdditiveBlending)
+  - 手牌下の接地光(makeGlowStripTexture)、四隅エミッタ(小シリンダー)、シアンのリム光＋前方冷光(点灯はcyberMixに追従)
+  - setCyber(on): body.cyber切替＋UIスイープ＋cyberSound(起動ハム＋ピング)＋3Dフェード。setModeでholobtn/systagも結果時非表示
+- 3D質向上: renderer.setPixelRatio上限 2→2.5、全テクスチャのanisotropyを端末最大(maxAniso())に（牌の柄・フェルトの斜め見の解像感UP）
+- 要確認: 電脳ON時の見た目（参考画像との方向性）、パフォーマンス（DPR2.5+MSAAが重い場合は2.25に戻す）、通常モードが従来通りか
+
 ## 2026-06-19 Claude（あがり牌の強調を復活：手前右に斜め置き）
 - あがり牌の flat を {x:1.9, z:T.Z+T.H*0.95+0.2, yaw:0.5} に（手前右へ出して斜めに）。伏せ手牌は“その場で倒す”ままなので、あがり牌は前(z)に出るぶん鳴きと重ならない
 

@@ -9,6 +9,10 @@
     --felt:#0c1410; --felt2:#0a1f17; --ink:#ece7d6; --muted:#8c9a8f;
     --gold:#e6c878; --gold-d:#caa84a; --green:#43a86a; --red:#c8553f;
     --panel:#12161a; --panel2:#171c20; --line:rgba(255,255,255,.08);
+    /* 電脳モード（ホログラム）トークン */
+    --cyan:#48d6ff; --cyan-glow:#8ff0ff; --cyan-line:rgba(72,214,255,.55);
+    --cyan-dim:rgba(72,214,255,.22); --holo-fill:rgba(10,20,30,.78);
+    --cgold:#f0c56a; --cgold-glow:#ffe6a0;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;}
@@ -181,6 +185,75 @@
   #resultpanel.yakuman #rp-score{color:#e23322;font-weight:700;text-shadow:0 0 40px rgba(220,40,20,.45);}
   #resultpanel.yakuman #rp-score small{color:#e7a59c;}
   #resultpanel.yakuman #rp-rank{color:#f0d98c;}
+
+  /* ============ 電脳モード（ホログラムUI） ============ */
+  /* ホロボタン（通常卓に埋め込まれた起動スイッチ） */
+  #holobtn{position:absolute;right:max(14px,env(safe-area-inset-right));
+    bottom:calc(84px + env(safe-area-inset-bottom));z-index:3;appearance:none;cursor:pointer;
+    width:52px;height:52px;border-radius:50%;color:var(--gold);font-size:.6rem;font-weight:700;letter-spacing:.1em;
+    background:radial-gradient(circle at 50% 38%,#2a2d31,#141619 70%);
+    border:1px solid rgba(230,200,120,.35);box-shadow:0 4px 14px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08);}
+  #holobtn:active{transform:scale(.94);}
+  #holobtn.on{color:var(--cyan);border-color:var(--cyan-line);
+    box-shadow:0 0 14px rgba(72,214,255,.45),inset 0 0 10px rgba(72,214,255,.18),0 4px 14px rgba(0,0,0,.5);}
+  body:not(.started) #holobtn{opacity:0;pointer-events:none;}
+  body.started #holobtn{opacity:1;transition:opacity .9s ease 1s;}
+  /* システム名タグ（電脳時のみ） */
+  #systag{position:absolute;left:max(14px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));
+    z-index:3;display:none;font-size:.62rem;letter-spacing:.18em;color:var(--cyan);
+    border:1px solid var(--cyan-dim);padding:4px 10px;pointer-events:none;
+    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+    background:var(--holo-fill);}
+  #systag b{color:var(--cgold);font-weight:700;}
+  body.cyber #systag{display:block;}
+  /* 覚醒スイープ（クラス付与で1回走る） */
+  @keyframes traceRun{from{background-position:-130% 0}to{background-position:230% 0}}
+  .awaken{position:relative;}
+  .awaken::after{content:"";position:absolute;inset:0;pointer-events:none;clip-path:inherit;
+    background:linear-gradient(100deg,transparent,rgba(143,240,255,.5),transparent) -130% 0/55% 100% no-repeat;
+    animation:traceRun .75s ease-out both;}
+  /* ---- UIの電脳スキン ---- */
+  body.cyber #stage{background:radial-gradient(130% 100% at 50% 26%,#101720 0%,#0a0f16 50%,#05070b 100%);}
+  body.cyber #status{color:var(--cyan);letter-spacing:.14em;border:1px solid var(--cyan-dim);
+    padding:4px 12px;background:var(--holo-fill);
+    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);}
+  body.cyber #cntpill{border-radius:0;border:1px solid var(--cyan-line);background:var(--holo-fill);
+    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+    box-shadow:0 0 10px rgba(72,214,255,.22);}
+  body.cyber #cntpill b{color:var(--cgold);}
+  body.cyber #cntpill span{color:var(--cyan);}
+  body.cyber #palbar{background:linear-gradient(0deg,rgba(6,12,18,.96),rgba(6,12,18,.62) 64%,transparent);}
+  body.cyber .palbody{border-radius:0;border:none;background:
+      repeating-linear-gradient(180deg,rgba(72,214,255,.05) 0 2px,transparent 2px 5px),
+      linear-gradient(180deg,rgba(16,28,40,.85),var(--holo-fill));
+    clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);
+    box-shadow:0 0 0 1px var(--cyan-line) inset,0 0 16px rgba(72,214,255,.18) inset;
+    filter:drop-shadow(0 0 8px rgba(72,214,255,.25));}
+  body.cyber .ftabs button{border-radius:0;border:1px solid var(--cyan-dim);border-bottom:none;
+    background:rgba(8,16,24,.8);color:var(--cyan);
+    clip-path:polygon(7px 0,100% 0,100% 100%,0 100%,0 7px);}
+  body.cyber .ftabs button.on{background:rgba(16,28,40,.95);color:var(--cgold);border-color:rgba(240,197,106,.55);}
+  body.cyber .cbtn,body.cyber .ic{border-radius:0;border:1px solid var(--cyan-dim);background:rgba(10,20,30,.6);
+    color:var(--cyan);letter-spacing:.08em;backdrop-filter:none;
+    clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px);}
+  body.cyber .cbtn:active,body.cyber .ic:active{color:#fff;filter:brightness(1.7) drop-shadow(0 0 8px var(--cyan-glow));}
+  body.cyber .cbtn.armed{background:rgba(240,197,106,.16);color:var(--cgold);border-color:rgba(240,197,106,.6);
+    filter:drop-shadow(0 0 7px rgba(240,197,106,.45));}
+  body.cyber .ic.on{color:var(--cgold);border-color:rgba(240,197,106,.5);background:rgba(240,197,106,.1);}
+  body.cyber .vsep{background:var(--cyan-dim);}
+  body.cyber #callhint{color:var(--cyan-glow);}
+  body.cyber #calls .chip{border-radius:0;border:1px solid rgba(240,197,106,.5);background:rgba(240,197,106,.1);
+    clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);}
+  body.cyber .calc{border-radius:0;background:rgba(14,22,16,.9);color:var(--cgold);
+    border:1px solid rgba(240,197,106,.75);letter-spacing:.14em;
+    clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+    box-shadow:0 0 0 1px rgba(240,197,106,.3) inset,0 0 14px rgba(240,197,106,.25);}
+  body.cyber .calc:disabled{background:rgba(10,18,26,.7);color:rgba(72,214,255,.4);border:1px solid var(--cyan-dim);box-shadow:none;}
+  body.cyber .calc.ready{animation:cgc 2s ease-in-out infinite;}
+  @keyframes cgc{50%{box-shadow:0 0 0 1px rgba(240,197,106,.4) inset,0 0 26px rgba(240,197,106,.55);}}
+  body.cyber .pal button{box-shadow:0 2px 7px rgba(0,0,0,.6),0 0 6px rgba(72,214,255,.18);}
+  body.cyber #scrollcue{border-radius:0;color:var(--cyan);border:1px solid var(--cyan-dim);background:var(--holo-fill);
+    clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);}
 </style>
 </head>
 <body>
@@ -190,7 +263,9 @@
       <div id="status"></div>
     </div>
 
+    <div id="systag">算符計算システム <b>v2.5</b></div>
     <div id="cntpill"><b id="cnt">0</b>/<b id="cntneed">14</b><span id="wlab"></span></div>
+    <button id="holobtn">電脳</button>
     <div id="scrollcue">▼ メニュー</div>
 
     <div id="palbar">
@@ -622,7 +697,7 @@ function buildAtlasNormal(cb){
       let nx=(xl-xr)*st,ny=(yu-yd)*st,nz=1;const len=Math.hypot(nx,ny,nz);
       const k=i*4;nd[k]=(nx/len*0.5+0.5)*255;nd[k+1]=(ny/len*0.5+0.5)*255;nd[k+2]=(nz/len*0.5+0.5)*255;nd[k+3]=255;}
     ng.putImageData(nimg,0,0);
-    const t=new THREE.CanvasTexture(nc);t.flipY=true;t.anisotropy=4;cb(t);
+    const t=new THREE.CanvasTexture(nc);t.flipY=true;t.anisotropy=maxAniso();cb(t);
   }catch(e){console.warn('atlas normal build failed',e);cb(null);}};
   im.onerror=()=>cb(null);im.src='assets/Mahjong.png';
 }
@@ -641,7 +716,7 @@ function loadFBXTiles(cb){
   const base='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
   loadScriptSeq([base+'libs/fflate.min.js',base+'curves/NURBSUtils.js',base+'curves/NURBSCurve.js',base+'loaders/FBXLoader.js'],ok=>{
     if(!ok||!THREE.FBXLoader)return cb(false);
-    atlasTex=new THREE.TextureLoader().load('assets/Mahjong.png');atlasTex.flipY=true;atlasTex.anisotropy=4;
+    atlasTex=new THREE.TextureLoader().load('assets/Mahjong.png');atlasTex.flipY=true;atlasTex.anisotropy=maxAniso();
     if(THREE.sRGBEncoding!==undefined)atlasTex.encoding=THREE.sRGBEncoding;
     buildAtlasNormal(nt=>{atlasNormal=nt;if(fbxReady&&THREE_OK)render();});  // 彫り込み法線マップ（非同期、出来次第反映）
     new THREE.FBXLoader().load('assets/MahjongPi_Yellow.fbx',obj=>{
@@ -692,10 +767,11 @@ function initComposer(){
   composer.setSize(w,h);
 }
 
+function maxAniso(){try{return renderer?renderer.capabilities.getMaxAnisotropy():4;}catch(e){return 4;}}
 function texFor(i){if(texCache[i])return texCache[i];const c=faceCanvas(i,200,284,false);
-  const t=new THREE.CanvasTexture(c);t.anisotropy=4;if(THREE.sRGBEncoding!==undefined)t.encoding=THREE.sRGBEncoding;return texCache[i]=t;}
+  const t=new THREE.CanvasTexture(c);t.anisotropy=maxAniso();if(THREE.sRGBEncoding!==undefined)t.encoding=THREE.sRGBEncoding;return texCache[i]=t;}
 function winTexFor(i){if(winTexCache[i])return winTexCache[i];const c=faceCanvas(i,200,284,true);
-  const t=new THREE.CanvasTexture(c);t.anisotropy=4;if(THREE.sRGBEncoding!==undefined)t.encoding=THREE.sRGBEncoding;return winTexCache[i]=t;}
+  const t=new THREE.CanvasTexture(c);t.anisotropy=maxAniso();if(THREE.sRGBEncoding!==undefined)t.encoding=THREE.sRGBEncoding;return winTexCache[i]=t;}
 
 function makeFeltTextures(){
   const N=512;
@@ -707,7 +783,7 @@ function makeFeltTextures(){
     d[i]=Math.max(0,Math.min(255,d[i]+n));d[i+1]=Math.max(0,Math.min(255,d[i+1]+n));d[i+2]=Math.max(0,Math.min(255,d[i+2]+n));}
   mg.putImageData(img,0,0);
   const map=new THREE.CanvasTexture(mc);map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(9,9);
-  if(THREE.sRGBEncoding!==undefined)map.encoding=THREE.sRGBEncoding;map.anisotropy=4;
+  if(THREE.sRGBEncoding!==undefined)map.encoding=THREE.sRGBEncoding;map.anisotropy=maxAniso();
   // ノーマルマップ：起毛の微細な凹凸
   const nc=document.createElement('canvas');nc.width=nc.height=N;const ng=nc.getContext('2d');
   const nimg=ng.createImageData(N,N),nd=nimg.data,hh=new Float32Array(N*N);
@@ -720,7 +796,7 @@ function makeFeltTextures(){
     let nx=(hl-hr)*0.5,ny=(hu-hd)*0.5,nz=1;const len=Math.hypot(nx,ny,nz);nx/=len;ny/=len;nz/=len;
     const k=i*4;nd[k]=(nx*0.5+0.5)*255;nd[k+1]=(ny*0.5+0.5)*255;nd[k+2]=(nz*0.5+0.5)*255;nd[k+3]=255;}
   ng.putImageData(nimg,0,0);
-  const normal=new THREE.CanvasTexture(nc);normal.wrapS=normal.wrapT=THREE.RepeatWrapping;normal.repeat.set(9,9);normal.anisotropy=4;
+  const normal=new THREE.CanvasTexture(nc);normal.wrapS=normal.wrapT=THREE.RepeatWrapping;normal.repeat.set(9,9);normal.anisotropy=maxAniso();
   return {map,normal};
 }
 // 環境マップ用の簡易グラデーション（柔らかな映り込み＝象牙・点棒の質感UP）
@@ -739,7 +815,7 @@ function buildEnvTexture(){
 function initScene(){
   const host=document.getElementById('stage');
   renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
-  renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+  renderer.setPixelRatio(Math.min(2.5,window.devicePixelRatio||1)); // 高DPI端末で解像度アップ（質向上）
   if(THREE.sRGBEncoding!==undefined)renderer.outputEncoding=THREE.sRGBEncoding;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=0.92;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -827,6 +903,86 @@ function buildKawa(){
   block(0,-4.8,0,6,3);            // 対面の河
   block(-5.0,-2.4,Math.PI/2,6,2); // 上家の河
   block(5.0,-2.4,Math.PI/2,6,2);  // 下家の河
+}
+
+/* ---- 電脳モード（3Dホログラムレイヤー：卓面に投影される回路・接地光・エミッタ） ---- */
+let cyberOn=false,cyberMix=0;
+const cyberFx={mats:[],lights:[],built:false};
+function makeCircuitTexture(){
+  const W=1024,H=640,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+  const cy=a=>`rgba(96,222,255,${a})`;
+  // 外周フレーム（面取り八角）
+  const ch=40,x0=26,y0=26,x1=W-26,y1=H-26;
+  const frame=(inset,alpha,lw)=>{const a=x0+inset,b=y0+inset,d=x1-inset,e=y1-inset,h=ch-inset*0.5;
+    g.strokeStyle=cy(alpha);g.lineWidth=lw;g.beginPath();
+    g.moveTo(a+h,b);g.lineTo(d-h,b);g.lineTo(d,b+h);g.lineTo(d,e-h);
+    g.lineTo(d-h,e);g.lineTo(a+h,e);g.lineTo(a,e-h);g.lineTo(a,b+h);g.closePath();g.stroke();};
+  frame(0,0.6,3);frame(14,0.18,1.5);
+  // コーナーブラケット
+  g.strokeStyle=cy(0.85);g.lineWidth=4;
+  [[x0,y0,1,1],[x1,y0,-1,1],[x0,y1,1,-1],[x1,y1,-1,-1]].forEach(([bx,by,sx,sy])=>{
+    g.beginPath();g.moveTo(bx+sx*ch,by);g.lineTo(bx+sx*(ch+34),by);g.stroke();
+    g.beginPath();g.moveTo(bx,by+sy*ch);g.lineTo(bx,by+sy*(ch+34));g.stroke();});
+  // 回路トレース（マンハッタン配線＋ノード）
+  for(let i=0;i<54;i++){
+    let x=70+Math.random()*(W-140),y=70+Math.random()*(H-140);
+    g.strokeStyle=cy(0.12+Math.random()*0.26);g.lineWidth=Math.random()<0.18?2:1;
+    g.beginPath();g.moveTo(x,y);
+    const steps=2+(Math.random()*3|0);
+    for(let s=0;s<steps;s++){
+      if(Math.random()<0.5)x+=Math.random()*180-90;else y+=Math.random()*120-60;
+      x=Math.max(48,Math.min(W-48,x));y=Math.max(48,Math.min(H-48,y));g.lineTo(x,y);}
+    g.stroke();
+    g.fillStyle=cy(0.5+Math.random()*0.3);g.fillRect(x-2.5,y-2.5,5,5);
+  }
+  const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;
+}
+function makeGlowStripTexture(){
+  const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');
+  const v=g.createLinearGradient(0,0,0,64);
+  v.addColorStop(0,'rgba(96,222,255,0)');v.addColorStop(0.5,'rgba(150,235,255,0.9)');v.addColorStop(1,'rgba(96,222,255,0)');
+  g.fillStyle=v;g.fillRect(0,0,256,64);
+  const hfade=g.createLinearGradient(0,0,256,0);
+  hfade.addColorStop(0,'rgba(0,0,0,0)');hfade.addColorStop(0.12,'rgba(255,255,255,1)');
+  hfade.addColorStop(0.88,'rgba(255,255,255,1)');hfade.addColorStop(1,'rgba(0,0,0,0)');
+  g.globalCompositeOperation='destination-in';g.fillStyle=hfade;g.fillRect(0,0,256,64);
+  return new THREE.CanvasTexture(c);
+}
+function buildCyberLayer(){
+  if(cyberFx.built||!scene)return;cyberFx.built=true;
+  const mk=(geo,map,o)=>{const m=new THREE.Mesh(geo,
+    new THREE.MeshBasicMaterial({map,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+    m.rotation.x=-Math.PI/2;scene.add(m);cyberFx.mats.push({m:m.material,o});return m;};
+  mk(new THREE.PlaneGeometry(16.4,10.6),makeCircuitTexture(),0.5).position.set(0,0.006,-1.0);   // 卓面の回路投影
+  mk(new THREE.PlaneGeometry(11.6,0.85),makeGlowStripTexture(),0.8).position.set(0,0.009,T.Z+0.12); // 手牌下の接地光
+  // 四隅エミッタ（投影機）
+  const em=new THREE.MeshBasicMaterial({color:0x9feaff,transparent:true,opacity:0});
+  [[-5.7,4.6],[5.7,4.6],[-5.7,-5.4],[5.7,-5.4]].forEach(p=>{
+    const b=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.13,0.12,6),em);
+    b.position.set(p[0],0.06,p[1]);scene.add(b);});
+  cyberFx.mats.push({m:em,o:0.95});
+  // シアンのリムライト＋前方の冷光（電脳の空気）
+  const rim=new THREE.DirectionalLight(0x59d6ff,0);rim.position.set(0,5,-9);rim.layers.enableAll();scene.add(rim);
+  const pl=new THREE.PointLight(0x48d6ff,0,16,2);pl.position.set(0,2.6,5.2);pl.layers.enableAll();scene.add(pl);
+  cyberFx.lights.push({l:rim,i:0.3},{l:pl,i:0.5});
+}
+function applyCyberMix(v){cyberMix=v;
+  cyberFx.mats.forEach(x=>x.m.opacity=x.o*v);
+  cyberFx.lights.forEach(x=>x.l.intensity=x.i*v);}
+function cyberSound(on){if(!soundOn||!actx)return;
+  if(on){tone(72,0.9,'sine',0.09);tone(144,0.7,'sine',0.05);
+    setTimeout(()=>{tone(1320,0.18,'sine',0.06);tone(1760,0.3,'sine',0.04);},260);}
+  else{tone(880,0.2,'sine',0.05);tone(120,0.5,'sine',0.07);}}
+function setCyber(on){
+  if(cyberOn===on)return;cyberOn=on;
+  document.body.classList.toggle('cyber',on);
+  document.getElementById('holobtn').classList.toggle('on',on);
+  if(on)['.palbody','#cntpill','#status','#systag'].forEach(sel=>document.querySelectorAll(sel).forEach(el=>{
+    el.classList.remove('awaken');void el.offsetWidth;el.classList.add('awaken');}));
+  ensureCtx();cyberSound(on);
+  if(!THREE_OK)return;buildCyberLayer();
+  const from=cyberMix,to=on?1:0;
+  tween(on?750:450,0,e=>applyCyberMix(from+(to-from)*e));
 }
 function makeTile(i,win){
   const outer=new THREE.Group();let mesh;
@@ -1068,6 +1224,8 @@ function setMode(m){const isR=m==='result';
   document.getElementById('topbar').style.display=isR?'none':'';
   document.getElementById('palbar').style.display=isR?'none':'';
   document.getElementById('cntpill').style.display=isR?'none':'';
+  document.getElementById('holobtn').style.display=isR?'none':'';
+  document.getElementById('systag').style.display=isR?'none':'';
   document.getElementById('scrollcue').classList.toggle('show',isR);}
 function showResult(r,instant){
   if(!resultPlane)return;
@@ -1357,6 +1515,7 @@ document.getElementById('setclose').onclick=()=>document.getElementById('setwrap
 document.getElementById('setwrap').onclick=(e)=>{if(e.target.id==='setwrap')e.currentTarget.classList.remove('show');};
 document.getElementById('snd').onclick=()=>{soundOn=!soundOn;const b=document.getElementById('snd');
   b.classList.toggle('on',soundOn);b.textContent=soundOn?'効果音':'消音';if(soundOn)ensureCtx();};
+document.getElementById('holobtn').onclick=()=>{ensureCtx();setCyber(!cyberOn);};
 
 document.getElementById('startbtn').onclick=()=>{ensureCtx();document.body.classList.add('started');};
 
